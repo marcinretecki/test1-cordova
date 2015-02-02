@@ -1,0 +1,91 @@
+// 16-COLUMN GRID VARs
+$col-15:(100% * 15/16);
+$col-14:(100% * 14/16);
+$col-13:(100% * 13/16);
+$col-12:(100% * 12/16);
+$col-11:(100% * 11/16);
+$col-10:(100% * 10/16);
+$col-9: (100% *  9/16);
+$col-8: (100% *  8/16);
+$col-7: (100% *  7/16);
+$col-6: (100% *  6/16);
+$col-5: (100% *  5/16);
+$col-4: (100% *  4/16);
+$col-3: (100% *  3/16);
+$col-2: (100% *  2/16);
+$col-1: (100% *  1/16);
+$col-1-32: (100% *  1/32);
+
+
+// COLOR VARs
+$white:   		 		#fff;
+$gray-on-dark:    rgba(white,0.55);
+$gray:            #ccc;
+$dark-gray:       #888;
+
+$beige: 		    	#edeae7;
+$beige-border:  	#aaa7a2;
+$beige-hover:   	#ddd9d2;
+$beige-light:   	#fff; // same as $white
+
+$blue: 		      	#3a8ac0;
+$blue-border:   	#2d6f99;
+$blue-hover:    	#006eb3;
+$blue-light:    	#73b9e6;
+
+$green: 		    	#308c8c;
+$green-border:  	#0f6666;
+$green-hover:   	#1c7373;
+$green-light:   	#60B3B3;
+
+$orange: 	      	#de7642;
+$orange-border: 	#b04c1a;
+$orange-hover:  	#c55c27;
+$orange-light:  	#ffaa7f;
+
+$red: 			   		#dd4b39;
+$red-border:   		#b0281a;
+$red-hover:    		#c53727;
+$red-light:    		#ff604c;
+
+$dark: 		     		#282e33;
+$dark-border:  		#171F26;
+$dark-light:   		#505559;
+
+$dark-btn:        #3c454c;
+$dark-btn-border: #1A2226;
+$dark-btn-hover:  #252C33;
+
+$font-dark:       #110f0c;
+$font-light:      #666057;
+$font-semi-dark:  #33302b;
+
+
+// Typography and spacing
+$bariol: 'bariol_lightlight', 'Gill Sans', 'Gill Sans MT', Helvetica, Arial, 'Nimbus Sans L', sans-serif;
+$palatino: Palatino,'Palatino Linotype','URW Palladio L',"Droid Serif",serif;
+$helvetica: Helvetica,Arial,'Nimbus Sans L',"Droid Sans",sans-serif;
+
+$space-half: 0.625rem;
+$space: 1.25rem;
+$space-2: 2 * $space;
+$space-4: 4 * $space;
+$space-6: 6 * $space;
+$space-8: 8 * $space;
+
+$size-mini: 0.8125rem;
+$size-0: 1rem;
+$size-1: 1.25rem;
+$size-2: 1.666rem;
+$size-3: 2.221rem;
+$size-4: 2.961rem;
+$size-5: 3.947rem;
+$size-6: 5.26rem;
+
+$line-1: 1.667em;
+
+
+// @Media
+$m905: "screen and (max-width: 905px)";
+$m770: "screen and (max-width: 770px)";
+$m400: "screen and (max-width: 400px)";

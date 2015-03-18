@@ -28,6 +28,7 @@
 
         , lastEl
         , lastCSS
+        , lastRect
 
         , activeGroup
 
@@ -82,8 +83,7 @@
             draggable: el.children[0] && el.children[0].nodeName || (/[uo]l/i.test(el.nodeName) ? 'li' : '*'),
             ghostClass: 'sortable-ghost',
             ignore: 'a, img',
-            filter: null,
-            animation: 0
+            filter: null
         };
 
         // Set default options
@@ -149,9 +149,11 @@
             }
 
             // Check filter
-            if( typeof filter === 'function' && filter.call(this, target, this) ){
-                _dispatchEvent(el, 'filter', target);
-                return; // cancel dnd
+            if( typeof filter === 'function' ){
+                if( filter.call(this, target, this) ){
+                    _dispatchEvent(el, 'filter', target);
+                    return; // cancel dnd
+                }
             }
             else if( filter ){
                 filter = filter.split(',').filter(function (criteria) {
@@ -334,32 +336,27 @@
                 var
                       el = this.el
                     , target = _closest(evt.target, this.options.draggable, el)
-                    , dragRect = dragEl.getBoundingClientRect()
                 ;
 
                 if( el.children.length === 0 || el.children[0] === ghostEl || (el === evt.target) && _ghostInBottom(el, evt) ){
                     el.appendChild(dragEl);
-
-                    // ANIMATE
-                    this._animate(dragRect, dragEl);
-
-                    this._velocity();
-
                 }
-                else if( target && !target.animated && target !== dragEl && (target.parentNode[expando] !== void 0) ){
+                else if( target && target !== dragEl && (target.parentNode[expando] !== void 0) ){
                     if( lastEl !== target ){
                         lastEl = target;
                         lastCSS = _css(target);
+                        lastRect = target.getBoundingClientRect();
                     }
 
 
-                    var   targetRect = target.getBoundingClientRect()
-                        , width = targetRect.right - targetRect.left
-                        , height = targetRect.bottom - targetRect.top
+                    var
+                          rect = lastRect
+                        , width = rect.right - rect.left
+                        , height = rect.bottom - rect.top
                         , floating = /left|right|inline/.test(lastCSS.cssFloat + lastCSS.display)
                         , isWide = (target.offsetWidth > dragEl.offsetWidth)
                         , isLong = (target.offsetHeight > dragEl.offsetHeight)
-                        , halfway = (floating ? (evt.clientX - targetRect.left)/width : (evt.clientY - targetRect.top)/height) > .5
+                        , halfway = (floating ? (evt.clientX - rect.left)/width : (evt.clientY - rect.top)/height) > .5
                         , nextSibling = target.nextElementSibling
                         , after
                     ;
@@ -368,81 +365,18 @@
                     setTimeout(_unsilent, 30);
 
                     if( floating ){
-                        after = (target.previousElementSibling === dragEl) && !isWide || halfway && isWide;
+                        after = (target.previousElementSibling === dragEl) && !isWide || halfway && isWide
                     } else {
                         after = (nextSibling !== dragEl) && !isLong || halfway && isLong;
                     }
 
                     if( after && !nextSibling ){
                         el.appendChild(dragEl);
-
-                        // ANIMATE
-                        this._animate(dragRect, dragEl);
-
-                        this._velocity();
                     } else {
                         target.parentNode.insertBefore(dragEl, after ? nextSibling : target);
-
-                        // ANIMATE
-                        this._animate(dragRect, dragEl);
-                        this._animate(targetRect, target);
-
-                        this._velocity();
                     }
                 }
             }
-        },
-
-        _animate: function (prevRect, target) {
-            var ms = this.options.animation;
-
-            if (ms) {
-                var currentRect = target.getBoundingClientRect();
-
-                _css(target, 'transition', 'none');
-                _css(target, 'transform', 'translate3d('
-                    + (prevRect.left - currentRect.left) + 'px,'
-                    + (prevRect.top - currentRect.top) + 'px,0)'
-                );
-
-                target.offsetWidth; // repaint
-
-                _css(target, 'transition', 'all ' + ms + 'ms');
-                _css(target, 'transform', 'translate3d(0,0,0)');
-
-                clearTimeout(target.animated);
-                target.animated = setTimeout(function () {
-                    _css(target, 'transition', '');
-                    target.animated = false;
-                }, ms);
-            }
-        },
-
-        _velocity: function () {
-
-            var wrapper = document.querySelector('#items'),
-                wrapper_position = wrapper.getBoundingClientRect(),
-                words = wrapper.querySelectorAll('.btn-word'),
-                clones = wrapper.parentNode.querySelector('.clones').querySelectorAll('.clone'),
-                word,
-                word_position,
-                clone,
-                i,
-                len,
-                pos;
-
-            for (i=0, len=words.length; i < len; i++) {
-                word = words[i];
-                word_position = word.getBoundingClientRect();
-
-                pos = word.getAttribute('data-pos') - 1;
-                clone = clones[pos];
-
-                Velocity.hook(clone, "translateX", word_position.left - wrapper_position.left - 10 + "px");
-                Velocity.hook(clone, "translateY", word_position.top - wrapper_position.top - 10 + "px");
-
-            }
-
         },
 
         _offUpEvents: function () {
@@ -661,16 +595,14 @@
             }
             else {
                 var className = (' '+el.className+' ').replace(/\s+/g, ' ').replace(' '+name+' ', '');
-                el.className = className + (state ? ' '+name : '');
+                el.className = className + (state ? ' '+name : '')
             }
         }
     }
 
 
     function _css(el, prop, val){
-        var style = el && el.style;
-
-        if( style ){
+        if( el && el.style ){
             if( val === void 0 ){
                 if( document.defaultView && document.defaultView.getComputedStyle ){
                     val = document.defaultView.getComputedStyle(el, '');
@@ -678,15 +610,9 @@
                 else if( el.currentStyle ){
                     val = el.currentStyle;
                 }
-
-                return prop === void 0 ? val : val[prop];
-            }
-            else {
-                if (!(prop in style)) {
-                    prop = '-webkit-' + prop;
-                }
-
-                style[prop] = val + (typeof val === 'string' ? '' : 'px');
+                return  prop === void 0 ? val : val[prop];
+            } else {
+                el.style[prop] = val + (typeof val === 'string' ? '' : 'px');
             }
         }
     }
@@ -756,16 +682,8 @@
     };
 
 
-    Sortable.version = '0.6.0';
+    Sortable.version = '0.5.2';
 
-    /**
-     * Create sortable instance
-     * @param {HTMLElement}  el
-     * @param {Object}      [options]
-     */
-    Sortable.create = function (el, options) {
-        return new Sortable(el, options)
-    };
 
     // Export
     return Sortable;
@@ -776,9 +694,14 @@
 
 
 
-
 /*
-Remember to hook or animate once again when browser changes dimensions / orientation
+
+IDEA:
+- use Sortable on a clone
+- then get coordinates
+- use velocity to translate elements into place
+
+
 */
 
 
@@ -788,221 +711,112 @@ Remember to hook or animate once again when browser changes dimensions / orienta
 Structure:
 
 - Front screen
-    (choose level, (choose language))
+    (choose level, choose language)
 - Level screen
     (build senteces, check hint, go to next, see all previous senteces, buy whole level, buy all levels)
 - Previous sentences view
-
 
 
 */
 
 
 
-function Sentence() {
-    this.content = document.getElementById('content');
+function showTrans() {
+    var translation = document.querySelector(".translation");
+    var spans = translation.querySelectorAll("span");
+
+    var i, len, span;
+    for (i=0, len=spans.length; i < len; i++) {
+        span = spans[i];
+        Velocity( span, { opacity: [1, 0],  translateX: [0, '400px'], translateZ: 0 }, { duration: 400, easing: [.645,.045,.355,1], delay: i*100 } );
+    }
+
+    var button = document.querySelector('.btn-translate');
+
+    Velocity( button, {opacity: 0, translateY: '1rem'}, {duration: 200, easing: [.645,.045,.355,1], visibility: 'hidden'} );
+
 }
 
-Sentence.prototype = {
+// Clone and slide in
+function itemsComeIn() {
+    var wrapper = document.querySelector('#items');
+    var words = wrapper.querySelectorAll('.btn-word');
 
-    constructor: Sentence,
-
-    homeIn: function() {
-        var that = this,
-            content = this.content,
-            menu = document.createElement('div'),
-            menuItemClass = "btn-menu btn-menu-hidden";
-            menuItemOne = document.createElement('button'),
-            menuItemTwo = menuItemOne.cloneNode(true),
-            menuItemThree = menuItemOne.cloneNode(true);
-
-        menu.className = "items center";
-        menu.id = "menu-home";
-
-        menuItemOne.className = menuItemClass + " btn-menu-1";
-        menuItemOne.innerHTML = '<span>Od podstaw</span><div class="percent">87%</div>';
-        menuItemOne.addEventListener('click', function() {
-            that.homeOut('1');
-        });
-
-        menuItemTwo.className = menuItemClass + " btn-menu-2";
-        menuItemTwo.innerHTML = '<span>Średnio-zaawansowane</span><div class="percent">100%</div>';
-        menuItemTwo.addEventListener('click', function() {
-            that.homeOut('2');
-        });
-
-        menuItemThree.className = menuItemClass + " btn-menu-3";
-        menuItemThree.innerHTML = '<span>Zaawansowane</span><div class="percent">5%</div>';
-        menuItemThree.addEventListener('click', function() {
-            that.homeOut('3');
-        });
-
-        menu.appendChild(menuItemOne);
-        menu.appendChild(menuItemTwo);
-        menu.appendChild(menuItemThree);
-
-        content.appendChild(menu);
-
-        var menuItems = [menuItemOne, menuItemTwo, menuItemThree]
-
-        var i, len, menuItem;
-        for (i=0, len=menuItems.length; i < len; i++) {
-            menuItem = menuItems[i];
-            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: 400, easing: [0.645,0.045,0.355,1], delay: i*100 } );
-        }
-    },
-
-    homeOut: function(level) {
-        var that = this,
-            menuItems = document.querySelectorAll('.btn-menu'),
-            i,
-            len,
-            menuItem;
-
-        for (i=0, len=menuItems.length; i < len; i++) {
-            menuItem = menuItems[i];
-            function complete(i) {
-                if (2 === i) {
-                    that._removeHome();
-                    console.log('remove home ' + i);
-                }
-            }
-            Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: 400, easing: [0.645,0.045,0.355,1], delay: i*100,
-                complete: function(elements) {complete();} } );
-
-        }
-    },
-
-    comeIn: function(level) {
-        var wrapper = this.wrapper,
-            wrapper_position = wrapper.getBoundingClientRect(),
-            words = wrapper.querySelectorAll('.btn-word'),
-            parent = wrapper.parentNode,
-            clones = document.createElement('div'),
-            x = 400,
-            word,
-            word_position,
-            clone,
-            cloned_node,
-            i,
-            len;
-
-        for (i=0, len=words.length; i < len; i++) {
-            word = words[i];
-            word_position = word.getBoundingClientRect();
-
-            clone = word.cloneNode(true);
-            clone.className = clone.className + " clone";
-
-            word.setAttribute('data-pos', i + 1);
-
-            Velocity.hook(clone, "translateX", word_position.left - wrapper_position.left - 10 + x + "px");
-            Velocity.hook(clone, "translateY", word_position.top - wrapper_position.top - 10 + "px");
-
-            clones.appendChild(clone);
-        }
-
-        clones.className = 'clones';
-        parent.appendChild(clones);
-
-        cloned_node = clones.firstChild;
-
-        function hook(i) {
-            setTimeout(function(){
-                word = words[i];
-                word_position = word.getBoundingClientRect();
-
-                pos = word.getAttribute('data-pos') - 1;
-                clone = clones.querySelectorAll('.clone')[pos];
-                Velocity.hook(clone, "translateX", word_position.left - wrapper_position.left - 10 + "px");
-                Velocity.hook(clone, "opacity", 1);
-            }, 100*i);
-         }
-
-        for (i=0, len=words.length; i < len; i++) {
-            hook(i);
-        }
-
-        var translate = document.getElementById('translate');
-
-        this._attachTranslate();
-    },
-
-    showTrans: function() {
-        var translation = document.querySelector(".translation");
-        var spans = translation.querySelectorAll("span");
-
-        var i, len, span;
-        for (i=0, len=spans.length; i < len; i++) {
-            span = spans[i];
-            Velocity( span, { opacity: [1, 0],  translateX: [0, '400px'] }, { duration: 200, easing: [0.645,0.045,0.355,1], delay: i*100 } );
-        }
-
-        var button = document.querySelector('.btn-translate');
-
-        Velocity( button, {opacity: 0, translateY: '1rem'}, {duration: 200, easing: [0.645,0.045,0.355,1], visibility: 'hidden'} );
-    },
+    var i, len, word;
+    for (i=0, len=words.length; i < len; i++) {
+        word = words[i];
+        Velocity( word, { opacity: [1, 0],  translateX: [0, '400px'], translateZ: 0 }, { duration: 400, easing: [.645,.045,.355,1], delay: i*100, visibility: 'visible'} );
+    }
+}
 
 
-    // Do wewnętrznego użytku
+function itemsLeave() {
 
-    _attachTranslate: function() {
-        var that = this;
-        translate.addEventListener('click', function() {
-            that.showTrans();
-        });
-    },
+    var items = document.querySelector('items');
+    var wrapper = document.querySelector('#items');
+    var words = wrapper.querySelectorAll('.btn-word');
 
-    _removeHome: function() {
-        var content = this.content;
-            menu = document.getElementById('menu-home');
+    var i, len, word;
+    for (i=0, len=words.length; i < len; i++) {
+        word = words[i];
+        Velocity( word, { opacity: [1, 0],  translateX: [0, '400px'], translateZ: 0 }, { duration: 400, easing: [.645,.045,.355,1], delay: i*100, visibility: 'visible'} );
+    }
 
-        content.removeChild(menu);
-    },
+}
 
-    _getSentences: function(level) {
-        var sentences;
+function cloneItems() {
+    var wrapper = document.querySelector('#items');
+    var words = wrapper.querySelectorAll('.btn-word');
+    var clones = document.querySelector('.clones');
 
-        if (level === 'a') {
-            sentences = arrayA;
-        } else if (level === 'b') {
-            sentences = arrayB;
-        } else if (level === 'c') {
-            sentences = arrayC;
-        } else {
-            console.log('level not provided');
-        }
-        return sentences;
-    },
+    var i, len, word;
+    for (i=0, len=words.length; i < len; i++) {
+        word = words[i];
+        word.style = '';
+        var position = word.getBoundingClientRect();
 
-    _getLevels: function() {
-        // some way of geting percent of levels done to show on home
-    },
-
-    _createWrapper: function() {
-        var wrapper;
-
-
-    },
-
-    _getWrapper: function() {
-        var wrapper;
-        wrapper = document.querySelector('#wrapper-items');
-        return wrapper
-    },
-
-    _newSortable: function() {
-        var wrapperItems = document.getElementById('wrapper-items');
-        new Sortable(wrapperItems);
-    },
-
-};
-
-var sentence = new Sentence();
+        var clone = word.cloneNode(true)
+        clone.className = clone.className + " clone";
+        clone.style.left = position.left - 10 - 400 + "px";
+        clone.style.top = position.top - 10 + "px";
+        clones.appendChild(clone);
+    }
+}
 
 
 window.addEventListener('load', function() {
 
-    sentence.homeIn(); // load the menu
+    cloneItems();
+    itemsComeIn();
+
+    var el = document.getElementById('items');
+    new Sortable(el, {
+        onStart: function (e) {
+            /* dragging */
+            var item = e.item;
+            Velocity( item, { opacity: [0, 1] }, { duration: 400, easing: [.645,.045,.355,1] } );
+        },
+        onEnd: function (e) {
+            /* dragging */
+            var item = e.item;
+            Velocity( item, { opacity: 1 }, { duration: 400, easing: [.645,.045,.355,1] } );
+        },
+
+        onAdd: function (e){
+            var item = e.item; // dragged HTMLElement
+        },
+
+        onUpdate: function (e){
+            var item = e.item; // dragged HTMLElement
+        },
+
+        onRemove: function (e){
+            var item = e.item; // dragged HTMLElement
+        },
+
+        onFilter: function (e){
+            var item = e.item; // HTMLElement on which was `mousedown|tapstart` event.
+        }
+    });
 
 }, false );

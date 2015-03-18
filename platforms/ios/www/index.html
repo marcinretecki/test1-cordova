@@ -1,41 +1,133 @@
 <!DOCTYPE html>
+<html lang="en" xmlns:og="http://opengraphprotocol.org/schema/" itemscope itemtype="http://schema.org/article">
+<head>
+  <title itemprop="name">Setninger</title>
+
+  <link rel="stylesheet" type="text/css" href="c/s.css" />
+  <link rel="stylesheet" type="text/css" href="c/pisanie.css" />
+
+  <meta charset="UTF-8">
+
+<style>
+.header-main{width:100%;}
+.header-content{width:100%;}
+.header-content a{display:inline-block;border:0;color:#110f0c}
+.header-content .logo{color:#110f0c;}
+.header-content a:hover,.header-content a:active,.header-content a:focus{background:#edeae7;color:#000;}
+
+.header-trans{opacity:0.95;border-bottom:1px solid #1A2226;background:#fff;}
+.header-trans:after{display:none}
+
+.header-content [class*="col-"]{
+  margin-bottom:0;
+}
+
+
+.header-content .right{position:absolute;right:0}
+.header-content .left{position:absolute;left:0}
+.header-trans{border-color:#3c454c;}
+
+
+/* Menu */
+.btn-menu{display:block;padding:1.25rem 2.5rem;width:40rem;max-width:100%;margin:0 auto 2.5rem;border:0;background:#fff;font-size:1.25rem;color:#000 !important;text-align:left;font-family:Bariol,Helvetica Neue;font-weight:200;}
+.btn-menu:hover{background:#fff;color:#000;}
+
+.btn-menu-1{border-top:0.625rem solid #308c8c;}
+.btn-menu-2{border-top:0.625rem solid #de7642;}
+.btn-menu-3{border-top:0.625rem solid #dd4b39;}
+
+.btn-menu-1 div{color:#308c8c;}
+.btn-menu-2 div{color:#de7642;}
+.btn-menu-3 div{color:#dd4b39;}
+
+.btn-menu span{font-family:Bariol;font-weight:200; font-size:1.667rem}
+
+
+/* Sentence */
+
+.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;font-size:0;}
+.items-block:before{content: '';display:inline-block;height:100%;vertical-align:middle;}
+.items{display:inline-block;position:relative;width:90%;vertical-align:middle;}
+
+.btn-word{border:1px solid transparent;background-color:#1c7373;
+margin:10px;cursor:move;position:relative;text-shadow:none;
+-webkit-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+-o-user-select: none;
+user-select: none;
+opacity:0;overflow:hidden;
+z-index:5;
+position:relative;
+transition:all 0.2s cubic-bezier(.645,.045,.355,1);
+}
+.btn-word:hover{border-color:#0f6666;opacity:0.75;}
+
+.clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
+
+.sortable-ghost {-opacity:0.75;}
+
+
+.translation{margin:0;}
+.translation span{display:inline-block;opacity:0;}
+
+
+.app-footer{position:absolute;bottom:0;left:0;right:0;}
+
+.btn-translate{display:inline-block;border:1px solid #60b3b3;background:transparent;color:#60B3B3;}
+.btn-translate:hover,.btn-translate:focus{border-color:#fff;color:#fff}
+
+
+
+</style>
+
+</head>
+<body>
+
+<header class="header-main header-trans">
+  <div class="header-content group">
+      <a class="logo" href="">Setninger</a>
+  </div>
+</header>
+
+<div class="section-dark section-100">
+
+  <div id="content" class="section-content section-100 items-block centered">
 <!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    <div class="items items-on-board">
+      <div id="wrapper-items" class="space-x4">
+        <div class="btn btn-word btn-s-2">kommer</div>
+        <div class="btn btn-word btn-s-2">du</div>
+        <div class="btn btn-word btn-s-2">og</div>
+        <div class="btn btn-word btn-s-2">din</div>
+        <div class="btn btn-word btn-s-2">kone</div>
+        <div class="btn btn-word btn-s-2">fra</div>
+        <div class="btn btn-word btn-s-2">Polen</div>
+        <div class="btn btn-word btn-s-2">?</div>
+      </div>
 
-    http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
+      <p id="translation" class="translation"><i><span>Czy</span> <span>Ty</span> <span>i</span> <span>Twoja</span> <span>żona</span> <span>pochodzicie</span> <span>z</span> <span>Polski</span><span>?</span></i></p>
+    </div>
+
+    <footer class="app-footer">
+      <div id="wrapper-buttons" class="section-content section-1-1 group centered">
+        <button id="translate" type="button" class="btn btn-translate">Tips</button>
+        <button type="button" class="btn btn-translate" onClick="itemsLeave();">></button>
+      </div>
+    </footer>
+
+
 -->
-<html>
-    <head>
-        <meta charset="utf-8" />
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="msapplication-tap-highlight" content="no" />
-        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
-        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-        <link rel="stylesheet" type="text/css" href="css/index.css" />
-        <title>Hello World</title>
-    </head>
-    <body>
-        <div class="app">
-            <h1>Apache Cordova</h1>
-            <div id="deviceready" class="blink">
-                <p class="event listening">Connecting to Device</p>
-                <p class="event received">Device is Ready</p>
-            </div>
-        </div>
-        <script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="js/index.js"></script>
-    </body>
+  </div>
+
+</div>
+
+
+<script src="http://cdn.jsdelivr.net/velocity/1.1.0/velocity.min.js"></script>
+
+<script src="content/array-a.js"></script>
+
+<script src="j/j-setninger.js"></script>
+</body>
 </html>

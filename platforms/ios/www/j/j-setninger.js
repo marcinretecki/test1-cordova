@@ -798,82 +798,46 @@ Structure:
 */
 
 
+function home() {
+    var content = document.getElementById('content'),
+        menu = document.createElement('div'),
+        menuItemClass = "btn-menu";
+        menuItem = document.createElement('button'),
+        menuItemTwo = menuItem.cloneNode(true),
+        menuItemThree = menuItem.cloneNode(true);
 
-function Sentence() {
-    this.content = document.getElementById('content');
+    menu.className = "items center";
+    menu.id = "menu-home";
+
+    menuItem.className = menuItemClass + " btn-menu-1";
+    menuItem.innerHTML = "<span>Od podstaw</span><div style='float:right;'>0%</div>";
+
+    menuItemTwo.className = menuItemClass + " btn-menu-2";
+    menuItemTwo.innerHTML = "<span>Średnio-zaawansowane</span><div style='float:right;'>0%</div>";
+
+    menuItemThree.className = menuItemClass + " btn-menu-3";
+    menuItemThree.innerHTML = "<span>Zaawansowane</span><div style='float:right;'>0%</div>";
+
+    menu.appendChild(menuItem);
+    menu.appendChild(menuItemTwo);
+    menu.appendChild(menuItemThree);
+
+    content.appendChild(menu);
+}
+
+home();
+
+
+
+function Sentence(wrapper) {
+    this.wrapper = document.querySelector(wrapper);
 }
 
 Sentence.prototype = {
 
     constructor: Sentence,
 
-    homeIn: function() {
-        var that = this,
-            content = this.content,
-            menu = document.createElement('div'),
-            menuItemClass = "btn-menu btn-menu-hidden";
-            menuItemOne = document.createElement('button'),
-            menuItemTwo = menuItemOne.cloneNode(true),
-            menuItemThree = menuItemOne.cloneNode(true);
-
-        menu.className = "items center";
-        menu.id = "menu-home";
-
-        menuItemOne.className = menuItemClass + " btn-menu-1";
-        menuItemOne.innerHTML = '<span>Od podstaw</span><div class="percent">87%</div>';
-        menuItemOne.addEventListener('click', function() {
-            that.homeOut('1');
-        });
-
-        menuItemTwo.className = menuItemClass + " btn-menu-2";
-        menuItemTwo.innerHTML = '<span>Średnio-zaawansowane</span><div class="percent">100%</div>';
-        menuItemTwo.addEventListener('click', function() {
-            that.homeOut('2');
-        });
-
-        menuItemThree.className = menuItemClass + " btn-menu-3";
-        menuItemThree.innerHTML = '<span>Zaawansowane</span><div class="percent">5%</div>';
-        menuItemThree.addEventListener('click', function() {
-            that.homeOut('3');
-        });
-
-        menu.appendChild(menuItemOne);
-        menu.appendChild(menuItemTwo);
-        menu.appendChild(menuItemThree);
-
-        content.appendChild(menu);
-
-        var menuItems = [menuItemOne, menuItemTwo, menuItemThree]
-
-        var i, len, menuItem;
-        for (i=0, len=menuItems.length; i < len; i++) {
-            menuItem = menuItems[i];
-            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: 400, easing: [0.645,0.045,0.355,1], delay: i*100 } );
-        }
-    },
-
-    homeOut: function(level) {
-        var that = this,
-            menuItems = document.querySelectorAll('.btn-menu'),
-            i,
-            len,
-            menuItem;
-
-        for (i=0, len=menuItems.length; i < len; i++) {
-            menuItem = menuItems[i];
-            function complete(i) {
-                if (2 === i) {
-                    that._removeHome();
-                    console.log('remove home ' + i);
-                }
-            }
-            Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: 400, easing: [0.645,0.045,0.355,1], delay: i*100,
-                complete: function(elements) {complete();} } );
-
-        }
-    },
-
-    comeIn: function(level) {
+    comeIn: function() {
         var wrapper = this.wrapper,
             wrapper_position = wrapper.getBoundingClientRect(),
             words = wrapper.querySelectorAll('.btn-word'),
@@ -953,13 +917,6 @@ Sentence.prototype = {
         });
     },
 
-    _removeHome: function() {
-        var content = this.content;
-            menu = document.getElementById('menu-home');
-
-        content.removeChild(menu);
-    },
-
     _getSentences: function(level) {
         var sentences;
 
@@ -972,37 +929,19 @@ Sentence.prototype = {
         } else {
             console.log('level not provided');
         }
-        return sentences;
-    },
 
-    _getLevels: function() {
-        // some way of geting percent of levels done to show on home
-    },
-
-    _createWrapper: function() {
-        var wrapper;
-
-
-    },
-
-    _getWrapper: function() {
-        var wrapper;
-        wrapper = document.querySelector('#wrapper-items');
-        return wrapper
-    },
-
-    _newSortable: function() {
-        var wrapperItems = document.getElementById('wrapper-items');
-        new Sortable(wrapperItems);
     },
 
 };
 
-var sentence = new Sentence();
+//var sentence = new Sentence("#wrapper-items");
 
 
 window.addEventListener('load', function() {
 
-    sentence.homeIn(); // load the menu
+    //sentence.comeIn();
+
+    //var wrapperItems = document.getElementById('wrapper-items');
+    //new Sortable(wrapperItems);
 
 }, false );

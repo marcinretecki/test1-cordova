@@ -9,7 +9,8 @@
   <meta charset="UTF-8">
 
 <style>
-
+.header-main{width:100%;}
+.header-content{width:100%;text-align:center;}
 .header-content a{display:inline-block;border:0;color:#110f0c}
 .header-content .logo{color:#110f0c;}
 .header-content a:hover,.header-content a:active,.header-content a:focus{background:#edeae7;color:#000;}
@@ -28,8 +29,10 @@
 
 
 /* Menu */
-.btn-menu{display:block;padding:1.25rem 2.5rem;width:40rem;margin:0 auto 2.5rem;border:0;background:#fff;font-size:1.25rem;color:#000 !important;text-align:left;font-family:Bariol,Helvetica Neue;font-weight:200;}
+.btn-menu{position:relative;display:block;padding:1.25rem 2.5rem;width:40rem;max-width:100%;margin:0 auto 2.5rem;border:0;background:#fff;font-size:1.667rem;color:#000 !important;text-align:left;font-family:Bariol,Helvetica Neue;font-weight:200;}
 .btn-menu:hover{background:#fff;color:#000;}
+
+.btn-menu-hidden{opacity:0;transition:none;}
 
 .btn-menu-1{border-top:0.625rem solid #308c8c;}
 .btn-menu-2{border-top:0.625rem solid #de7642;}
@@ -39,14 +42,14 @@
 .btn-menu-2 div{color:#de7642;}
 .btn-menu-3 div{color:#dd4b39;}
 
-.btn-menu span{font-family:Bariol;font-weight:200; font-size:1.667rem}
+.btn-menu .percent{font-size:1.25rem;line-height:1.5;position:absolute;right:2.5rem;bottom:1.25rem;}
 
 
 /* Sentence */
 
 .items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;font-size:0;}
 .items-block:before{content: '';display:inline-block;height:100%;vertical-align:middle;}
-.items{display:inline-block;position:relative;width:90%;vertical-align:middle;}
+.items{display:inline-block;position:relative;width:100%;vertical-align:middle;}
 
 .btn-word{border:1px solid transparent;background-color:#1c7373;
 margin:10px;cursor:move;position:relative;text-shadow:none;
@@ -123,7 +126,7 @@ transition:all 0.2s cubic-bezier(.645,.045,.355,1);
 </div>
 
 
-<script src="http://cdn.jsdelivr.net/velocity/1.1.0/velocity.min.js"></script>
+<script src="http://cdn.jsdelivr.net/velocity/1.2.2/velocity.min.js"></script>
 
 <script src="content/array-a.js"></script>
 

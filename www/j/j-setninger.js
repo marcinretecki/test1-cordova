@@ -822,19 +822,19 @@ Sentence.prototype = {
         menuItemOne.className = menuItemClass + " btn-menu-1";
         menuItemOne.innerHTML = '<span>Od podstaw</span><div class="percent">87%</div>';
         menuItemOne.addEventListener('click', function() {
-            that.homeOut('1');
+            that.homeOut('a');
         });
 
         menuItemTwo.className = menuItemClass + " btn-menu-2";
         menuItemTwo.innerHTML = '<span>Średnio-zaawansowane</span><div class="percent">100%</div>';
         menuItemTwo.addEventListener('click', function() {
-            that.homeOut('2');
+            that.homeOut('b');
         });
 
         menuItemThree.className = menuItemClass + " btn-menu-3";
         menuItemThree.innerHTML = '<span>Zaawansowane</span><div class="percent">5%</div>';
         menuItemThree.addEventListener('click', function() {
-            that.homeOut('3');
+            that.homeOut('c');
         });
 
         menu.appendChild(menuItemOne);
@@ -861,22 +861,25 @@ Sentence.prototype = {
 
         for (i=0, len=menuItems.length; i < len; i++) {
             menuItem = menuItems[i];
-            function complete(i) {
-                if (2 === i) {
-                    that._removeHome();
-                    console.log('remove home ' + i);
-                }
-            }
             Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: 400, easing: [0.645,0.045,0.355,1], delay: i*100,
-                complete: function(elements) {complete();} } );
+                complete: function(elements) {
+                    elements.forEach( function(item, index, array) {
+                        if ( item === menuItems[len - 1] ) {
+                            that._createSentence(level);
+                        }
+                    } );
+                }
+            } );
 
         }
     },
 
-    comeIn: function(level) {
-        var wrapper = this.wrapper,
-            wrapper_position = wrapper.getBoundingClientRect(),
+    // we need a way to determine sentence number
+
+    comeIn: function() {
+        var wrapper = document.getElementById('wrapper-items'),
             words = wrapper.querySelectorAll('.btn-word'),
+            wrapper_position = wrapper.getBoundingClientRect(),
             parent = wrapper.parentNode,
             clones = document.createElement('div'),
             x = 400,
@@ -923,16 +926,16 @@ Sentence.prototype = {
             hook(i);
         }
 
-        var translate = document.getElementById('translate');
-
-        this._attachTranslate();
+        this._newSortable();
     },
 
     showTrans: function() {
-        var translation = document.querySelector(".translation");
-        var spans = translation.querySelectorAll("span");
+        var translation = document.querySelector(".translation"),
+            spans = translation.querySelectorAll("span"),
+            i,
+            len,
+            span;
 
-        var i, len, span;
         for (i=0, len=spans.length; i < len; i++) {
             span = spans[i];
             Velocity( span, { opacity: [1, 0],  translateX: [0, '400px'] }, { duration: 200, easing: [0.645,0.045,0.355,1], delay: i*100 } );
@@ -943,14 +946,113 @@ Sentence.prototype = {
         Velocity( button, {opacity: 0, translateY: '1rem'}, {duration: 200, easing: [0.645,0.045,0.355,1], visibility: 'hidden'} );
     },
 
+    _createSentence: function(level, no) {
+        var that = this,
+            no = 0, // for now, before we determine sentence no
 
-    // Do wewnętrznego użytku
+            // Get the sentence
+            sentences = this._getSentences(level),
+            sentence = sentences[no],
+            s = sentence['s'], // array of good answers
+            b = sentence['b'], // string - word you can't touch
 
-    _attachTranslate: function() {
-        var that = this;
-        translate.addEventListener('click', function() {
+            // New nodes
+            wrapper = document.createElement('div'),
+            word = document.createElement('div'),
+            spill,
+            clone,
+            items,
+            i,
+            len;
+
+        // Prepare nodes
+        wrapper.className = 'space-x4';
+        wrapper.id = 'wrapper-items';
+        word.className = 'btn btn-word btn-s-2';
+
+        spill = s[0].sort(function() { return 0.5 - Math.random() });
+
+        /*
+         OBS!
+         trzeba jeszcze sprawdzić, czy spill nie rozwiązał zadania samemu
+        */
+
+        // Append words into the wrapper
+        for (i=0, len=spill.length; i < len; i++) {
+            clone = word.cloneNode(true);
+            clone.innerHTML = spill[i];
+            wrapper.appendChild(clone);
+        }
+
+        // remove the menu
+        this._removeHome();
+
+        // create and return items wrapper
+        items = this._createItemsWrapper();
+
+        // append the wrapper
+        items.insertBefore(wrapper, items.firstChild);
+
+        // create footer
+        this._createFooter();
+
+        // create translation
+        this._createTranslation(level, no);
+
+        // let the sentence in
+        this.comeIn();
+    },
+
+    _createTranslation: function(level, no) {
+        var that = this,
+            items = document.getElementById('items'),
+            no = 0, // for now, before we determine sentnce no
+            sentences = this._getSentences(level),
+            sentence = sentences[no],
+            t = sentence['t'], // string - translation
+            translation = document.createElement('p'),
+            span,
+            len,
+            i;
+
+        // Append spans in translation
+        t = t.split(" ");
+        for (i=0, len=t.length; i < len; i++) {
+            span = document.createElement("span");
+            span.appendChild( document.createTextNode(t[i]) );
+            translation.appendChild( span );
+            if (i < len - 1) {
+                translation.appendChild( document.createTextNode(" ") );
+            }
+        }
+        translation.id = 'translation';
+        translation.className = 'translation';
+
+        items.appendChild(translation);
+    },
+
+    _createFooter: function() {
+        var that = this,
+            content = this.content,
+            footer = document.createElement('footer'),
+            footerWrapper = document.createElement('div'),
+            footerTips = document.createElement('button');
+
+        footer.className = 'app-footer';
+        footerWrapper.className = 'section-content section-1-1 group centered';
+        footerWrapper.id = 'wrapper-buttons';
+        footerTips.className = 'btn btn-translate';
+        footerTips.appendChild( document.createTextNode('Tips') );
+        footerTips.id = 'translate';
+        footerTips.type = 'button';
+        footerTips.addEventListener('click', function() {
             that.showTrans();
         });
+
+        footerWrapper.appendChild(footerTips);
+        footer.appendChild(footerWrapper);
+
+        content.appendChild(footer);
     },
 
     _removeHome: function() {
@@ -979,22 +1081,31 @@ Sentence.prototype = {
         // some way of geting percent of levels done to show on home
     },
 
-    _createWrapper: function() {
-        var wrapper;
+    _createItemsWrapper: function() {
+        var content = this.content,
+            items = document.createElement('div');
 
+        items.className = 'items items-on-board';
+        items.id = 'items';
+        content.appendChild(items);
+
+        return items;
 
     },
 
     _getWrapper: function() {
-        var wrapper;
-        wrapper = document.querySelector('#wrapper-items');
+        var wrapper = document.getElementById('wrapper-items');
         return wrapper
     },
 
     _newSortable: function() {
-        var wrapperItems = document.getElementById('wrapper-items');
-        new Sortable(wrapperItems);
+        var wrapperItems = document.getElementById('wrapper-items'),
+            sortable = new Sortable(wrapperItems);
     },
+
+    _destroySortable: function() {
+
+    }
 
 };
 

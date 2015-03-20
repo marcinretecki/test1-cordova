@@ -1,12 +1,13 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget id="com.example.test" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>Hello World</name>
+    <name>Setninger</name>
     <description>
-        A sample Apache Cordova application that responds to the deviceready event.
+        Setninger APP
     </description>
-    <author email="dev@cordova.apache.org" href="http://cordova.io">
-        Apache Cordova Team
+    <author email="marcin@nocnasowa.pl" href="http://nocnasowa.pl">
+        Nocna Sowa
     </author>
+
     <content src="index.html" />
     <access origin="*" />
 </widget>

@@ -1,14 +1,22 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:og="http://opengraphprotocol.org/schema/" itemscope itemtype="http://schema.org/article">
+<html lang="en">
 <head>
   <title itemprop="name">Setninger</title>
 
   <link rel="stylesheet" type="text/css" href="c/s.css" />
   <link rel="stylesheet" type="text/css" href="c/pisanie.css" />
 
+  <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, target-densitydpi=device-dpi" />
+
+
   <meta charset="UTF-8">
 
 <style>
+*{-webkit-user-select: none;
+-webkit-touch-callout: none;
+-webkit-appearance: carret;
+-webkit-appearance: none;
+}
 .header-main{width:100%;}
 .header-content{width:100%;text-align:center;}
 .header-content a{display:inline-block;border:0;color:#110f0c}
@@ -70,7 +78,7 @@ transition:all 0.2s cubic-bezier(.645,.045,.355,1);
 .sortable-ghost {-opacity:0.75;}
 
 
-.translation{margin:0;}
+.translation{margin:0;font-style:italic;}
 .translation span{display:inline-block;opacity:0;}
 
 
@@ -109,7 +117,7 @@ transition:all 0.2s cubic-bezier(.645,.045,.355,1);
       </div>
 
 
-      <p id="translation" class="translation"><i><span>Czy</span> <span>Ty</span> <span>i</span> <span>Twoja</span> <span>żona</span> <span>pochodzicie</span> <span>z</span> <span>Polski</span><span>?</span></i></p>
+      <p id="translation" class="translation"><span>Czy</span> <span>Ty</span> <span>i</span> <span>Twoja</span> <span>żona</span> <span>pochodzicie</span> <span>z</span> <span>Polski</span><span>?</span></p>
     </div>
 
     <footer class="app-footer">
@@ -125,7 +133,7 @@ transition:all 0.2s cubic-bezier(.645,.045,.355,1);
 
 </div>
 
-
+<script src="lib/fastclick.js"></script>
 <script src="http://cdn.jsdelivr.net/velocity/1.2.2/velocity.min.js"></script>
 
 <script src="content/array-a.js"></script>

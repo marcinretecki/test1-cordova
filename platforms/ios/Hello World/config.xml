@@ -3,28 +3,31 @@
     <preference name="AllowInlineMediaPlayback" value="false" />
     <preference name="AutoHideSplashScreen" value="true" />
     <preference name="BackupWebStorage" value="cloud" />
-    <preference name="DisallowOverscroll" value="false" />
-    <preference name="EnableViewportScale" value="false" />
+    <preference name="DisallowOverscroll" value="true" />
+    <preference name="EnableViewportScale" value="true" />
     <preference name="FadeSplashScreen" value="true" />
     <preference name="FadeSplashScreenDuration" value=".25" />
-    <preference name="KeyboardDisplayRequiresUserAction" value="true" />
+    <preference name="KeyboardDisplayRequiresUserAction" value="false" />
     <preference name="MediaPlaybackRequiresUserAction" value="false" />
     <preference name="ShowSplashScreenSpinner" value="true" />
-    <preference name="SuppressesIncrementalRendering" value="false" />
+    <preference name="SuppressesIncrementalRendering" value="true" />
     <preference name="TopActivityIndicator" value="gray" />
     <preference name="GapBetweenPages" value="0" />
     <preference name="PageLength" value="0" />
     <preference name="PaginationBreakingMode" value="page" />
     <preference name="PaginationMode" value="unpaginated" />
+    
+    <preference name="Orientation" value="landscape" />
+    
     <feature name="LocalStorage">
         <param name="ios-package" value="CDVLocalStorage" />
     </feature>
-    <name>Hello World</name>
+    <name>Setninger</name>
     <description>
-        A sample Apache Cordova application that responds to the deviceready event.
+        Setninger APP
     </description>
-    <author email="dev@cordova.apache.org" href="http://cordova.io">
-        Apache Cordova Team
+    <author email="marcin@nocnasowa.pl" href="http://nocnasowa.pl">
+        Nocna Sowa
     </author>
     <content src="index.html" />
     <access origin="*" />

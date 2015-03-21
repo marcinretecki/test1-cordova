@@ -12,5 +12,77 @@ var arrayA = [
       ["hvor", "kommer", "du", "fra", "?"]
     ],
     "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["Morbi", "leo", "risus", "porta", "ac", "consectetur", "vestibulum"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
+  },
+  {
+    "s": [
+      ["hvor", "kommer", "du", "fra", "?"]
+    ],
+    "t": "Skąd pochodzisz?"
   }
-]
+];

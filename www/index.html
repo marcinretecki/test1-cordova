@@ -70,15 +70,16 @@ opacity:0;overflow:hidden;
 z-index:5;
 position:relative;
 transition:all 0.2s cubic-bezier(.645,.045,.355,1);
+transform:translate3d(0,0,0);
 }
-.btn-word:hover{border-color:#0f6666;opacity:0.75;}
+.btn-word:hover{opacity:1;}
 
 .clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
 
-.sortable-ghost {-opacity:0.75;}
+.sortable-ghost:hover {}
 
 
-.translation{margin:0;font-style:italic;}
+.translation{position:absolute;bottom:5rem;left:0;right:0;padding:0 1.25rem;margin:0;font-style:italic;}
 .translation span{display:inline-block;opacity:0;}
 
 
@@ -103,38 +104,12 @@ transition:all 0.2s cubic-bezier(.645,.045,.355,1);
 <div class="section-dark section-100">
 
   <div id="content" class="section-content section-100 items-block centered">
-<!--
-    <div class="items items-on-board">
-      <div id="wrapper-items" class="space-x4">
-        <div class="btn btn-word btn-s-2">kommer</div>
-        <div class="btn btn-word btn-s-2">du</div>
-        <div class="btn btn-word btn-s-2">og</div>
-        <div class="btn btn-word btn-s-2">din</div>
-        <div class="btn btn-word btn-s-2">kone</div>
-        <div class="btn btn-word btn-s-2">fra</div>
-        <div class="btn btn-word btn-s-2">Polen</div>
-        <div class="btn btn-word btn-s-2">?</div>
-      </div>
-
-
-      <p id="translation" class="translation"><span>Czy</span> <span>Ty</span> <span>i</span> <span>Twoja</span> <span>żona</span> <span>pochodzicie</span> <span>z</span> <span>Polski</span><span>?</span></p>
-    </div>
-
-    <footer class="app-footer">
-      <div id="wrapper-buttons" class="section-content section-1-1 group centered">
-        <button id="translate" type="button" class="btn btn-translate">Tips</button>
-        <button type="button" class="btn btn-translate" onClick="itemsLeave();">></button>
-      </div>
-    </footer>
-
-
--->
   </div>
 
 </div>
 
-<script src="lib/fastclick.js"></script>
-<script src="http://cdn.jsdelivr.net/velocity/1.2.2/velocity.min.js"></script>
+<script src="j/fastclick.js"></script>
+<script src="j/velocity.min.js"></script>
 
 <script src="content/array-a.js"></script>
 

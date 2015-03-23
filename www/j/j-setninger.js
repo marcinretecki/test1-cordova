@@ -443,8 +443,17 @@
                 pos = word.getAttribute('data-pos') - 1;
                 clone = clones[pos];
 
-                Velocity.hook(clone, "translateX", word_position.left - wrapper_position.left - 10 + "px");
-                Velocity.hook(clone, "translateY", word_position.top - wrapper_position.top - 10 + "px");
+                //Velocity.hook(clone, "translateX", word_position.left - wrapper_position.left - 10 + "px");
+                //Velocity.hook(clone, "translateY", word_position.top - wrapper_position.top - 10 + "px");
+
+                Velocity(
+                    clone,
+                    {
+                        translateX: word_position.left - wrapper_position.left - 10 + "px",
+                        translateY: word_position.top - wrapper_position.top - 10 + "px",
+                    },
+                    { duration: 200, easing: [0.645,0.045,0.355,1] }
+                );
 
             }
 
@@ -869,7 +878,11 @@ Sentence.prototype = {
     homeOut: function(level) {
         var that = this,
             menuItems = document.querySelectorAll('.btn-menu'),
-            menuItem;
+            menuItem,
+            no;
+
+        // change color
+        this._changeColor(level);
 
         for (var i=0, len=menuItems.length; i < len; i++) {
             menuItem = menuItems[i];
@@ -877,7 +890,7 @@ Sentence.prototype = {
                 complete: function(elements) {
                     elements.forEach( function(item, index, array) {
                         if ( item === menuItems[menuItems.length - 1] ) {
-                            that._createSentence(level);
+                            that._createSentence(level, no);
                         }
                     } );
                 }
@@ -953,16 +966,21 @@ Sentence.prototype = {
     },
 
     _createSentence: function(level, no) {
+        var no = 0; // for now, before we determine sentence no
+        this._getSentence(level, no);
+
         var that = this,
-            no = 0, // for now, before we determine sentence no
-
-            // Get the sentence
-            sentence = this._getSentence(level, no),
+            sentence = this.store.sentence,
             s = sentence['s'], // array of good answers
-            b = sentence['b'], // string - word you can't touch
+            b = sentence['b']; // string - word you can't touch
 
-            // New nodes
-            wrapper = document.createElement('div'),
+            if (b === undefined) {
+                b = false;
+            }
+
+
+        // New nodes
+        var wrapper = document.createElement('div'),
             word = document.createElement('div'),
             spill,
             clone,
@@ -973,12 +991,23 @@ Sentence.prototype = {
         wrapper.id = 'wrapper-items';
         word.className = 'btn btn-word btn-s-2';
 
-        spill = s[0].sort(function() { return 0.5 - Math.random(); });
 
-        /*
-         OBS!
-         trzeba jeszcze sprawdzić, czy spill nie rozwiązał zadania samemu
-        */
+        // sort words randomly
+        spill = s['0'].sort(function() { return 0.5 - Math.random(); });
+
+        // Check if spill is not the same as correct answers
+        function checkSpill(spill) {
+            var result = s.forEach(function(item, index, array) {
+                if (spill === item) {
+                    return false;
+                }
+            });
+        }
+
+        // while it is correct, sort once again
+        while (checkSpill(spill)) {
+            spill = s['0'].sort(function() { return 0.5 - Math.random(); });
+        }
 
         // Append words into the wrapper
         for (var i=0, len=spill.length; i < len; i++) {
@@ -1007,13 +1036,12 @@ Sentence.prototype = {
     },
 
     _finishedSentence: function() {
-
+        // when the user finishes the
     },
 
-    _createTranslation: function(level, no) {
+    _createTranslation: function() {
         var that = this,
             content = this.store.content,
-            no = 0, // for now, before we determine sentnce no
             sentence = this.store.sentence,
             t = sentence['t'], // string - translation
             translation = document.createElement('p'),
@@ -1069,35 +1097,66 @@ Sentence.prototype = {
         Velocity( translate, {opacity: 0, translateY: '1rem'}, {duration: 200, easing: [0.645,0.045,0.355,1], visibility: 'hidden',
             complete: function() {
                 var removedFooter = content.removeChild(footer);
+                removedFooter = null;
             }
         } );
     },
 
     _removeHome: function() {
-        var content = this.store.content,
-            menu = document.getElementById('menu-home'),
-            menuCopy = menu.cloneNode(true),
-            replacedMenu = content.replaceChild(menuCopy, menu),
-            removedMenu = content.removeChild(menuCopy);
+        try {
+            var content = this.store.content,
+                menu = document.getElementById('menu-home'),
+                menuCopy = menu.cloneNode(true),
+                replacedMenu = content.replaceChild(menuCopy, menu),
+                removedMenu = content.removeChild(menuCopy);
+                replacedMenu =
+                removedMenu = null;
+        } catch (ex) {
+            // if there is noe menu, do nothing
+        }
     },
 
     _getSentence: function(level, no) {
-        var sentences;
+        var sentence;
 
         if (level === 'a') {
-            sentences = arrayA;
+            sentence = arrayA(no);
         } else if (level === 'b') {
-            sentences = arrayB;
+            sentence = arrayB(no);
         } else if (level === 'c') {
-            sentences = arrayC;
+            sentence = arrayC(no);
         } else {
             console.log('level not provided');
         }
-        return this.store.sentence = sentences[no];
+
+        return this.store.sentence = sentence;
     },
 
     _getLevels: function() {
         // some way of geting percent of levels done to show on home
+    },
+
+    _changeColor: function(level) {
+        try {
+            var section = document.getElementById('section'),
+                classSection100 = ' section-100';
+
+            switch (level) {
+                case 'a':
+                    section.className = 'section-green' + classSection100;
+                    break;
+                case 'b':
+                    section.className = 'section-orange' + classSection100;
+                    break;
+                case 'c' :
+                    section.className = 'section-red' + classSection100;
+                    break;
+                case 'menu':
+                    section.className = 'section-dark' + classSection100;
+                    break;
+            }
+
+        } catch (ex){};
     },
 
     _createItemsWrapper: function() {
@@ -1109,17 +1168,18 @@ Sentence.prototype = {
         content.appendChild(items);
 
         return items;
-
     },
 
     _getWrapper: function() {
-        var wrapper = document.getElementById('wrapper-items');
-        return wrapper;
+        try {
+            var wrapper = document.getElementById('wrapper-items');
+            return wrapper;
+        } catch (ex) {}
     },
 
     _newSortable: function() {
-        var wrapperItems = document.getElementById('wrapper-items'),
-            sortable = new Sortable(wrapperItems);
+        var wrapper = this._getWrapper(),
+            sortable = new Sortable(wrapper);
 
         this.store.sortable = sortable;
     },

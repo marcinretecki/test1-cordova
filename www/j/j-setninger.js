@@ -141,8 +141,8 @@ Sentence.prototype = {
             word = words[i];
             wordPosition = word.getBoundingClientRect();
             wordPositionObj[i] = {
-                left: wordPosition.left - wrapperPosition.left - 10,
-                top: wordPosition.top - wrapperPosition.top - 10,
+                left: wordPosition.left - wrapperPosition.left,
+                top: wordPosition.top - wrapperPosition.top,
             };
 
             var count = this.store.wordPositions.push(wordPositionObj);
@@ -220,8 +220,8 @@ Sentence.prototype = {
             wordPosition = words[i].getBoundingClientRect();
 
             wordPositionsNew[i] = {
-                left: wordPosition.left - wrapperPosition.left - 10,
-                top: wordPosition.top - wrapperPosition.top - 10,
+                left: wordPosition.left - wrapperPosition.left,
+                top: wordPosition.top - wrapperPosition.top,
             };
         }
 
@@ -250,12 +250,15 @@ Sentence.prototype = {
         // New nodes
         var wrapper = document.createElement('div'),
             word = document.createElement('div'),
+            wordInner = document.createElement('div'),
             spill, clone, items;
 
         // Prepare nodes
         wrapper.className = 'space-x4';
         wrapper.id = 'wrapper-items';
-        word.className = 'btn btn-word btn-s-2';
+        word.className = 'btn-outer';
+        wordInner.className = "btn-word";
+        word.appendChild(wordInner);
 
         // sort words randomly
         spill = s['0'].sort(function() { return 0.5 - Math.random(); });
@@ -277,7 +280,7 @@ Sentence.prototype = {
         // Append words into the wrapper
         for (var i=0, len=spill.length; i < len; i++) {
             clone = word.cloneNode(true);
-            clone.innerHTML = spill[i];
+            clone.firstChild.innerHTML = spill[i];
             wrapper.appendChild(clone);
 
             // store words

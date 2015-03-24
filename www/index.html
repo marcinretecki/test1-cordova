@@ -17,8 +17,8 @@
 -webkit-appearance: carret;
 -webkit-appearance: none;
 }
-.header-main{width:100%;padding-top:20px;}
-.header-content{width:100%;text-align:center;}
+.header{position:absolute;left:0;right:0;top:0;padding-top:20px;background:#3c454c;}
+.header-content{width:100%;text-align:center;background:#fff}
 .header-content a{display:inline-block;border:0;color:#110f0c}
 .header-content .logo{color:#110f0c;}
 .header-content a:hover,.header-content a:active,.header-content a:focus{background:#edeae7;color:#000;}
@@ -70,7 +70,8 @@ opacity:0;overflow:hidden;
 z-index:5;
 position:relative;
 transition:all 0.2s cubic-bezier(.645,.045,.355,1);
-transition:none;
+transition:translate3d(0,0,0);
+
 }
 .btn-word:hover{opacity:1;}
 
@@ -95,8 +96,8 @@ transition:none;
 </head>
 <body>
 
-<header class="header-main header-trans">
-  <div class="header-content group">
+<header class="header">
+  <div class="header-content">
       <a class="logo" href="">Setninger</a>
   </div>
 </header>
@@ -109,6 +110,7 @@ transition:none;
 </div>
 
 <script src="j/fastclick.js"></script>
+<script src="j/sortable.js"></script>
 <script src="j/velocity.min.js"></script>
 
 <script src="content/array-a.js"></script>

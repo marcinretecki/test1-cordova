@@ -133,7 +133,9 @@ Sentence.prototype = {
             clone,
             pos,
             countStoredClones,
-            wordPositionObj = [];
+            countWordPositions,
+            wordPositionObj = [],
+            storedClones = [];
 
         this.store.wrapperPosition = wrapperPosition;
 
@@ -145,44 +147,38 @@ Sentence.prototype = {
                 top: wordPosition.top - wrapperPosition.top,
             };
 
-            var count = this.store.wordPositions.push(wordPositionObj);
+            // store positions
+            countWordPositions = this.store.wordPositions.push(wordPositionObj);
 
             clone = word.cloneNode(true);
             clone.className = clone.className + " clone";
 
             word.setAttribute('data-pos', i + 1);
 
-            Velocity.hook(clone, "left", wordPositionObj[i].left + x + "px");
-            Velocity.hook(clone, "top", wordPositionObj[i].top + "px");
+            Velocity.hook(clone, "translateX", wordPositionObj[i].left + x + "px");
+            Velocity.hook(clone, "translateY", wordPositionObj[i].top + "px");
 
             clones.appendChild(clone);
 
             // store clones
-            countStoredClones = this.store.clones.push(clone);
+            countStoredClones = storedClones.push(clone);
         }
 
-        this.store.wordPositions = wordPositionObj;
+        this.store.clones = storedClones;               // store clones
+        this.store.wordPositions = wordPositionObj;     // store positions
 
         clones.className = 'clones';
         wrapper.parentNode.appendChild(clones);
 
         cloned_node = clones.firstChild;
 
-        function hook(i) {
-            setTimeout(function(){
-                word = words[i];
-
-                pos = word.getAttribute('data-pos') - 1;
-                clone = clones.querySelectorAll('.clone')[pos];
-                Velocity.hook(clone, "left", wordPositionObj[i].left + "px");
-                Velocity.hook(clone, "opacity", 1);
-            }, 100*i);
-         }
-
         for (var i=0, len=words.length; i < len; i++) {
-            hook(i);
+            Velocity(
+                storedClones[i],
+                { opacity: 1, translateX: [wordPositionObj[i].left, wordPositionObj[i].left + x]},
+                { duration: 150, easing: [0.645,0.045,0.355,1], delay: i*100, queue: false }
+            );
         }
-
 
         this._newSortable();
     },
@@ -226,8 +222,8 @@ Sentence.prototype = {
         }
 
         for (var i=0, len=words.length; i < len; i++) {
-            Velocity.hook(clones[i], "left", wordPositionsNew[i].left + "px");
-            Velocity.hook(clones[i], "top", wordPositionsNew[i].top + "px");
+            Velocity.hook(clones[i], "translateX", wordPositionsNew[i].left + "px");
+            Velocity.hook(clones[i], "translateY", wordPositionsNew[i].top + "px");
         }
     },
 
@@ -458,6 +454,7 @@ Sentence.prototype = {
         sortable.destroy();
     },
 
+    // legacy
     _velocity: function () {
         var wrapper = document.querySelector('#items'),
             wrapper_position = wrapper.getBoundingClientRect(),

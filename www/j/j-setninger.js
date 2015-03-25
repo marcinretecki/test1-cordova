@@ -176,7 +176,7 @@ Sentence.prototype = {
             Velocity(
                 storedClones[i],
                 { opacity: 1, translateX: [wordPositionObj[i].left, wordPositionObj[i].left + x]},
-                { duration: 150, easing: [0.645,0.045,0.355,1], delay: i*100, queue: false }
+                { duration: 200, easing: [0.645,0.045,0.355,1], delay: i*100, queue: false }
             );
         }
 
@@ -205,9 +205,8 @@ Sentence.prototype = {
 
         var words = this.store.words,
             clones = this.store.clones,
-            clonesPositions = this.store.clonesPositions,
             wordPositionsOld = this.store.wordPositions,
-            wrapperPosition = this.store.wrapperPosition,
+            wrapperPosition = document.getElementById('wrapper-items').getBoundingClientRect(),
             wordPositionsNew = [],
             wordPosition,
             count;
@@ -221,10 +220,21 @@ Sentence.prototype = {
             };
         }
 
+        this.store.wordPositions = wordPositionsNew;
+
         for (var i=0, len=words.length; i < len; i++) {
-            Velocity.hook(clones[i], "translateX", wordPositionsNew[i].left + "px");
-            Velocity.hook(clones[i], "translateY", wordPositionsNew[i].top + "px");
+            //Velocity.hook(clones[i], "translateX", wordPositionsNew[i].left + "px");
+            //Velocity.hook(clones[i], "translateY", wordPositionsNew[i].top + "px");
+
+            Velocity( clones[i], {
+                translateX: [wordPositionsNew[i].left, wordPositionsOld[i].left],
+                translateY: [wordPositionsNew[i].top, wordPositionsOld[i].top],
+            }, { duration: 200, easing: [0.645,0.045,0.355,1],
+                 queue: false
+            });
         }
+
+        // trzeba dodać padding w ostatnim elemencie tak, żeby wypełniło lukę
     },
 
     _createSentence: function(level, no) {

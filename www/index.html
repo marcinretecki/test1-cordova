@@ -62,10 +62,13 @@
 
 .items{display:inline-block;position:relative;width:100%;vertical-align:middle;}
 
-.items-on-board::before{position:absolute;left:-2.5rem;top:-1px;right:-2.5rem;bottom:-1px;background:#60B3B3;content:"";}
+.items-on-board::before{position:absolute;left:-2.5rem;top:-3px;right:-2.5rem;bottom:-3px;background:#60b3b3;content:"";
+border-top:1px solid rgba(0,0,0,0.4);border-bottom:1px solid rgba(255,255,255,0.2);
+transition:all 0.15s cubic-bezier(.645,.045,.355,1);
+}
 
 .btn-outer{display:inline-block;z-index:5;position:relative;overflow:hidden;
-padding:0;
+padding:3px;
 opacity:0;
 color:#fff;
 text-align:center;text-decoration:none;text-transform:none;text-shadow:none;white-space: normal;
@@ -76,7 +79,7 @@ transition:none;
 transform:translate(0,0);
 }
 
-.btn-word{padding:0.625rem 2.5rem;background-color:#308c8c;border-radius:3px;border:1px solid #60b3b3;
+.btn-word{padding:0.625rem 2.5rem;background-color:#308c8c;border-radius:3px;border:1px solid #60b3b3;border-top-color:rgba(255,255,255,0.4);border-bottom-color:rgba(0,0,0,0.3);
 font:400 1.25rem/1.1875 Palatino,"Palatino Linotype","URW Palladio L","Droid Serif",serif;}
 .btn-outer:hover{opacity:1;}
 

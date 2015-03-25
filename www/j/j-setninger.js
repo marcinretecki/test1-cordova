@@ -254,7 +254,6 @@ Sentence.prototype = {
             spill, clone, items;
 
         // Prepare nodes
-        wrapper.className = 'space-x4';
         wrapper.id = 'wrapper-items';
         word.className = 'btn-outer';
         wordInner.className = "btn-word";

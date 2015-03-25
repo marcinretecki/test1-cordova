@@ -441,7 +441,7 @@
         _css(ghostEl, 'left', rect.left - parseInt(css.marginLeft, 10));
         _css(ghostEl, 'width', rect.width);
         _css(ghostEl, 'height', rect.height);
-        _css(ghostEl, 'opacity', '0.8');
+        _css(ghostEl, 'opacity', '1');
         _css(ghostEl, 'position', 'fixed');
         _css(ghostEl, 'zIndex', '100000');
 

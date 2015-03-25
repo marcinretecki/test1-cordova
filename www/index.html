@@ -37,8 +37,10 @@
 
 
 /* Menu */
-.btn-menu{position:relative;display:block;padding:1.25rem 2.5rem;width:40rem;max-width:100%;margin:0 auto 2.5rem;border:0;background:#fff;font-size:1.667rem;color:#000 !important;text-align:left;font-family:Bariol,Helvetica Neue;font-weight:200;}
+.btn-menu{position:relative;display:block;padding:1.25rem 2.5rem;width:40rem;max-width:100%;margin:0 auto;border:0;background:#fff;font-size:1.667rem;color:#000 !important;text-align:left;font-family:Bariol,Helvetica Neue;font-weight:200;}
 .btn-menu:hover{background:#fff;color:#000;}
+
+.btn-menu + .btn-menu{margin-top:2.5rem;}
 
 .btn-menu-hidden{opacity:0;transition:none;}
 
@@ -55,12 +57,15 @@
 
 /* Sentence */
 
-.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;font-size:0;}
+.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;padding:5rem 1.25rem 7.5rem;font-size:0;}
 .items-block:before{content: '';display:inline-block;height:100%;vertical-align:middle;}
+
 .items{display:inline-block;position:relative;width:100%;vertical-align:middle;}
 
+.items-on-board::before{position:absolute;left:-2.5rem;top:-1px;right:-2.5rem;bottom:-1px;background:#60B3B3;content:"";}
+
 .btn-outer{display:inline-block;z-index:5;position:relative;overflow:hidden;
-padding:10px;
+padding:0;
 opacity:0;
 color:#fff;
 text-align:center;text-decoration:none;text-transform:none;text-shadow:none;white-space: normal;
@@ -69,11 +74,11 @@ cursor:move;
 transition:all 0.15s cubic-bezier(.645,.045,.355,1);
 }
 
-.btn-word{padding:0.625rem 2.5rem;background-color:#1c7373;border-radius:3px;
-font:400 1.25rem/1.1875 Palatino,"Palatino Linotype","URW Palladio L","Droid Serif",serif;
-}
-.btn-outer:hover{opacity:1;}
+.btn-word{padding:0.625rem 2.5rem;background-color:#308c8c;border-radius:3px;border:1px solid #60b3b3;
+font:400 1.25rem/1.1875 Palatino,"Palatino Linotype","URW Palladio L","Droid Serif",serif;}
+.btn-outer:hover{-opacity:1;}
 
+.clones{opacity:0;}
 .clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
 
 .sortable-ghost{}
@@ -81,7 +86,7 @@ font:400 1.25rem/1.1875 Palatino,"Palatino Linotype","URW Palladio L","Droid Ser
 .clone .btn-word{}
 
 
-.translation{position:absolute;bottom:5rem;left:0;right:0;padding:0 1.25rem;margin:0;font-style:italic;}
+.translation{position:absolute;bottom:5rem;left:0;right:0;padding:0 1.25rem;margin:0;font-style:italic;transition:none;text-align:center}
 .translation span{display:inline-block;opacity:0;}
 
 
@@ -105,7 +110,7 @@ font:400 1.25rem/1.1875 Palatino,"Palatino Linotype","URW Palladio L","Droid Ser
 
 <div id="section" class="section-dark section-100">
 
-  <div id="content" class="section-content section-100 items-block centered">
+  <div id="content" class="section-100 items-block">
   </div>
 
 </div>

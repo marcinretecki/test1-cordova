@@ -38,7 +38,13 @@ function Sentence() {
         words:   [],                                    // stored words for reference
         clones:  [],                                    // stored clones for reference
         wordPositions:  [],                             // stored positions for reference
+        wrapperPosition: null                           // wrapper position for reference
     };
+
+    this.opts = {
+        easing: [0.645,0.045,0.355,1],
+        duration: 200
+    }
 
 }
 
@@ -91,7 +97,7 @@ Sentence.prototype = {
 
         for (var i=0, len=menuItems.length; i < len; i++) {
             menuItem = menuItems[i];
-            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: 400, easing: [0.645,0.045,0.355,1], delay: i*100 } );
+            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: 400, easing: that.opts.easing, delay: i*100 } );
         }
     },
 
@@ -106,7 +112,7 @@ Sentence.prototype = {
 
         for (var i=0, len=menuItems.length; i < len; i++) {
             menuItem = menuItems[i];
-            Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: 400, easing: [0.645,0.045,0.355,1], delay: i*100,
+            Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: 400, easing: that.opts.easing, delay: i*100,
                 complete: function(elements) {
                     elements.forEach( function(item, index, array) {
                         if ( item === menuItems[menuItems.length - 1] ) {
@@ -127,6 +133,7 @@ Sentence.prototype = {
             wrapperPosition = wrapper.getBoundingClientRect(),
             words = this.store.words,
             clones = document.createElement('div'),
+            wrapperBack = document.createElement('div'),
             x = 400,
             word,
             wordPosition,
@@ -137,7 +144,10 @@ Sentence.prototype = {
             wordPositionObj = [],
             storedClones = [];
 
-        this.store.wrapperPosition = wrapperPosition;
+
+        // prepare new nodes
+        clones.className = 'clones';
+        wrapperBack.className = 'wrapper-back';
 
         for (var i=0, len=words.length; i < len; i++) {
             word = words[i];
@@ -166,17 +176,21 @@ Sentence.prototype = {
 
         this.store.clones = storedClones;               // store clones
         this.store.wordPositions = wordPositionObj;     // store positions
+        this.store.wrapperBack = wrapperBack;           // store background
+        this.store.wrapperPosition = wrapperPosition    // store wrapper positions
 
-        clones.className = 'clones';
-        wrapper.parentNode.appendChild(clones);
+        wrapper.parentNode.appendChild(clones);         // append clones
+        wrapper.parentNode.appendChild(wrapperBack);    // append background
 
-        cloned_node = clones.firstChild;
+        Velocity.hook(wrapperBack, 'height', wrapperPosition.height + 6 + "px");
+
+        Velocity(wrapperBack, { scaleY: [1, 0], translateY: [-( (wrapperPosition.height/2) + 3), 0]}, {duration: 300, easing: that.opts.easing, queue: false});
 
         for (var i=0, len=words.length; i < len; i++) {
             Velocity(
                 storedClones[i],
                 { opacity: 1, translateX: [wordPositionObj[i].left, wordPositionObj[i].left + x]},
-                { duration: 200, easing: [0.645,0.045,0.355,1], delay: i*100, queue: false }
+                { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 + 200, queue: false }
             );
         }
 
@@ -184,34 +198,44 @@ Sentence.prototype = {
     },
 
     showTrans: function() {
-        var translation = document.querySelector(".translation"),
+        var that = this,
+            translation = document.querySelector(".translation"),
             spans = translation.querySelectorAll("span"),
             span;
 
         for (var i=0, len=spans.length; i < len; i++) {
             span = spans[i];
-            Velocity( span, { opacity: [1, 0],  translateX: [0, '200px'] }, { duration: 200, easing: [0.645,0.045,0.355,1], delay: i*100 } );
+            Velocity( span, { opacity: [1, 0],  translateX: [0, '200px'] }, { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 } );
         }
 
         this._removeFooter();
     },
 
     animate: function() {
-
         /*  - bierzemy wszystkie słowa i obliczamy ich nowe miejsce
             - robimy animację między starym a nowym miejscem
             - zapisujemy nowe miejsce
         */
 
-        var words = this.store.words,
+        var that = this,
+            words = this.store.words,
             clones = this.store.clones,
+            wrapperBack = this.store.wrapperBack,
             wordPositionsOld = this.store.wordPositions,
-            wrapperPosition = document.getElementById('wrapper-items').getBoundingClientRect(),
+            wrapperPositionOld = this.store.wrapperPosition,
+            wrapper = document.getElementById('wrapper-items'),
+            wrapperPosition = wrapper.getBoundingClientRect(),
             wordPositionsNew = [],
+            len = words.length,
             wordPosition,
+            lastChild,lastChildPosition,newPadding,
             count;
 
-        for (var i=0, len=words.length; i < len; i++) {
+        for (var i=0; i < len; i++) {
+            words[i].style.paddingRight = '';   // reset padding;
+        }
+
+        for (var i=0; i < len; i++) {
             wordPosition = words[i].getBoundingClientRect();
 
             wordPositionsNew[i] = {
@@ -219,22 +243,37 @@ Sentence.prototype = {
                 top: wordPosition.top - wrapperPosition.top,
             };
         }
+        this.store.wordPositions = wordPositionsNew;    // store each word's position
 
-        this.store.wordPositions = wordPositionsNew;
-
-        for (var i=0, len=words.length; i < len; i++) {
-            //Velocity.hook(clones[i], "translateX", wordPositionsNew[i].left + "px");
-            //Velocity.hook(clones[i], "translateY", wordPositionsNew[i].top + "px");
-
+        for (var i=0; i < len; i++) {
             Velocity( clones[i], {
                 translateX: [wordPositionsNew[i].left, wordPositionsOld[i].left],
                 translateY: [wordPositionsNew[i].top, wordPositionsOld[i].top],
-            }, { duration: 200, easing: [0.645,0.045,0.355,1],
+            }, { duration: that.opts.duration, easing: that.opts.easing,
                  queue: false
             });
+
+            if (len - 1 === i) {
+                // on the last
+                if ( wrapperPositionOld.top !== wrapperPosition.top) {
+                    console.log('different wrapperPositions')
+                    Velocity(wrapperBack, {
+                        height: (wrapperPosition.height) + 6,
+                        translateY: [-( (wrapperPosition.height/2) + 3), 0]
+                    }, {duration: 200, easing: that.opts.easing, delay: 100
+                    });
+                    this.store.wrapperPosition = wrapperPosition;
+                }
+            }
         }
 
-        // trzeba dodać padding w ostatnim elemencie tak, żeby wypełniło lukę
+
+        // add padding to the last element
+        lastChild = wrapper.lastChild;
+        lastChildPosition = lastChild.getBoundingClientRect();
+        newPadding = Math.floor( wrapperPosition.right - lastChildPosition.right );
+        Velocity.hook(lastChild, 'paddingRight', newPadding + "px" );
+
     },
 
     _createSentence: function(level, no) {
@@ -263,6 +302,7 @@ Sentence.prototype = {
         wrapper.id = 'wrapper-items';
         word.className = 'btn-outer';
         wordInner.className = "btn-word";
+
         word.appendChild(wordInner);
 
         // sort words randomly
@@ -355,11 +395,12 @@ Sentence.prototype = {
     },
 
     _removeFooter: function() {
-        var content = this.store.content,
+        var that = this,
+            content = this.store.content,
             footer = document.querySelector('.app-footer'),
             translate = document.getElementById('translate');
 
-        Velocity( translate, {opacity: 0, translateY: '1rem'}, {duration: 200, easing: [0.645,0.045,0.355,1], visibility: 'hidden',
+        Velocity( translate, {opacity: 0, translateY: '1rem'}, {duration: that.opts.duration, easing: that.opts.easing, visibility: 'hidden',
             complete: function() {
                 var removedFooter = content.removeChild(footer);
                 removedFooter = null;
@@ -485,7 +526,8 @@ Sentence.prototype = {
 
     // legacy
     _velocity: function () {
-        var wrapper = document.querySelector('#items'),
+        var that = this,
+            wrapper = document.querySelector('#items'),
             wrapper_position = wrapper.getBoundingClientRect(),
             words = wrapper.querySelectorAll('.btn-word'),
             clones = wrapper.parentNode.querySelector('.clones').querySelectorAll('.clone'),
@@ -512,7 +554,7 @@ Sentence.prototype = {
                     translateX: word_position.left - wrapper_position.left - 10 + "px",
                     translateY: word_position.top - wrapper_position.top - 10 + "px",
                 },
-                { duration: 200, easing: [0.645,0.045,0.355,1] }
+                { duration: that.opts.duration, easing: that.opts.easing }
             );
 
         }

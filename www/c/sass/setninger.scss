@@ -63,8 +63,6 @@ font-style:normal;
 
 .items{display:inline-block;position:relative;width:100%;vertical-align:middle;}
 
-.items-on-board::before{position:absolute;left:-2.5rem;top:-3px;right:-2.5rem;bottom:-3px;background:#60b3b3;content:"";border-top:1px solid rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.15);}
-
 .btn-outer{display:inline-block;position:relative;z-index:5;padding:3px;opacity:0;
 color:#fff;text-align:center;text-decoration:none;text-transform:none;text-shadow:none;white-space: normal;
 transition:none;overflow:hidden;cursor:move;
@@ -75,13 +73,19 @@ transition:none;overflow:hidden;cursor:move;
 font:400 $size-2/1.1875 Bariol,Palatino,"Palatino Linotype","URW Palladio L","Droid Serif",serif;}
 .btn-outer:hover{opacity:1;}
 
+.clones{position:absolute;left:0;top:0;z-index:1}
 .clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
 
 
-.section-orange .items-on-board::before{background-color:$orange-light;}
+.wrapper-back{position:absolute;z-index:0;left:-2.5rem;top:50%;right:-2.5rem;height:0;background:#60b3b3;content:"";border-top:1px solid rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.15);
+transform:scaleY(0);
+transition:none;
+}
+
+.section-orange .wrapper-back{background-color:$orange-light;}
 .section-orange .btn-word{background-color:$orange;}
 
-.section-red .items-on-board::before{background-color:$red;}
+.section-red .wrapper-back{background-color:$red;}
 .section-red .btn-word{background-color:$red;}
 
 

@@ -404,24 +404,36 @@ Sentence.prototype = {
     _changeColor: function(level) {
         try {
             var section = document.getElementById('section'),
-                classSection100 = ' section-100';
+                sectionClass = ' section-100';
 
             switch (level) {
                 case 'a':
-                    section.className = 'section-green' + classSection100;
+                    section.className = 'section-green' + sectionClass;
                     break;
                 case 'b':
-                    section.className = 'section-orange' + classSection100;
+                    section.className = 'section-orange' + sectionClass;
                     break;
                 case 'c' :
-                    section.className = 'section-red' + classSection100;
+                    section.className = 'section-red' + sectionClass;
                     break;
                 case 'menu':
-                    section.className = 'section-dark' + classSection100;
+                    section.className = 'section-dark' + sectionClass;
                     break;
             }
 
         } catch (ex){};
+    },
+
+    _toggleOpacity: function(el, op) {
+        try {
+            var pos = el.dataset.pos - 1,
+                clone = this.store.clones[pos];
+
+            Velocity.hook(clone, "opacity", op);
+
+
+
+        } catch (ex){}
     },
 
     _createItemsWrapper: function() {
@@ -448,11 +460,18 @@ Sentence.prototype = {
             sortable = new Sortable(wrapper, {
                 animation: 0,
 
-                // Called by any change to the list (add / update / remove)
+                // dragging started
+                onStart: function (evt) {
+                    that._toggleOpacity(evt.item, "0.5");
+                },
+
+                // dragging ended
                 onEnd: function (evt) {
-                    var itemEl = evt.item,        // dragged HTMLElement
-                        oldIndex = evt.oldIndex,  // element's old index within parent
-                        newIndex = evt.newIndex;  // element's new index within parent
+                    that._toggleOpacity(evt.item, "1");
+
+                    // te mogą się przydać do ustalenia czy zdanie jest ułożone
+                    //evt.oldIndex;  // element's old index within parent
+                    //evt.newIndex;  // element's new index within parent
                 },
             });
 

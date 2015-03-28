@@ -10,3 +10,86 @@ src:url('http://setninger.com/f/bariol_light-webfont.eot?#iefix') format('embedd
 font-weight:normal;
 font-style:normal;
 }
+
+
+*{-webkit-user-select: none;
+-webkit-touch-callout: none;
+-webkit-appearance: carret;
+-webkit-appearance: none;
+}
+.header{position:absolute;left:0;right:0;top:0;padding-top:20px;background:$dark-btn;}
+.header-content{width:100%;text-align:center;background:#fff}
+.header-content a{display:inline-block;border:0;color:$font-dark;font-family:Bariol,$bariol}
+.header-content .logo{color:$font-dark;}
+.header-content a:hover,.header-content a:active,.header-content a:focus{background:$beige;color:#000;}
+
+.header-trans{opacity:1;border:none;background:$white;}
+.header-trans:after{display:none}
+
+.header-content [class*="col-"]{
+  margin-bottom:0;
+}
+
+
+.header-content .right{position:absolute;right:0}
+.header-content .left{position:absolute;left:0}
+
+
+/* Menu */
+.btn-menu{position:relative;display:block;padding:$space $space-2;width:40rem;max-width:100%;margin:0 auto;border:0;background:$white;
+  font:normal normal 200 #{$size-2}/1.1 Bariol,$bariol;
+  color:#000 !important;text-align:left;}
+.btn-menu:hover{background:$white;color:#000;}
+
+.btn-menu + .btn-menu{margin-top:$space-2;}
+
+.btn-menu-hidden{opacity:0;transition:none;}
+
+.btn-menu-1{border-top:$space-half solid $green;}
+.btn-menu-2{border-top:$space-half solid $orange;}
+.btn-menu-3{border-top:$space-half solid $red;}
+
+.btn-menu-1 .percent{color:$green;}
+.btn-menu-2 .percent{color:$orange;}
+.btn-menu-3 .percent{color:$red;}
+
+.btn-menu .percent{font-size:$size-1;line-height:1.5;position:absolute;right:$space-2;bottom:$space;}
+
+
+/* Sentence */
+
+.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;padding:$space-4 $space $space-6;font-size:0;}
+.items-block:before{content: '';display:inline-block;height:100%;vertical-align:middle;}
+
+.items{display:inline-block;position:relative;width:100%;vertical-align:middle;}
+
+.items-on-board::before{position:absolute;left:-2.5rem;top:-3px;right:-2.5rem;bottom:-3px;background:#60b3b3;content:"";border-top:1px solid rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.15);}
+
+.btn-outer{display:inline-block;position:relative;z-index:5;padding:3px;opacity:0;
+color:#fff;text-align:center;text-decoration:none;text-transform:none;text-shadow:none;white-space: normal;
+transition:none;overflow:hidden;cursor:move;
+-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;-o-user-select:none;user-select:none;
+}
+
+.btn-word{padding:$space-half $space-2;background-color:$green;border-radius:3px;border:1px solid transparent;border-top-color:rgba(255,255,255,0.2);border-bottom-color:rgba(0,0,0,0.2);
+font:400 $size-2/1.1875 Bariol,Palatino,"Palatino Linotype","URW Palladio L","Droid Serif",serif;}
+.btn-outer:hover{opacity:1;}
+
+.clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
+
+
+.section-orange .items-on-board::before{background-color:$orange-light;}
+.section-orange .btn-word{background-color:$orange;}
+
+.section-red .items-on-board::before{background-color:$red;}
+.section-red .btn-word{background-color:$red;}
+
+
+.translation{position:absolute;bottom:5rem;left:0;right:0;padding:0 1.25rem;margin:0;font-style:italic;transition:none;text-align:center}
+.translation span{display:inline-block;opacity:0;}
+
+
+.app-footer{position:absolute;bottom:0;left:0;right:0;}
+
+.btn-translate{display:inline-block;border:1px solid #60b3b3;background:transparent;color:#60B3B3;}
+.btn-translate:hover,.btn-translate:focus{border-color:#fff;color:#fff}

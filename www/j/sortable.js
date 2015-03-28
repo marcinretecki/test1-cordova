@@ -252,7 +252,7 @@
     _dragStarted: function () {
       if (rootEl && dragEl) {
         // Apply effect
-        _toggleClass(dragEl, this.options.ghostClass, true);
+        //_toggleClass(dragEl, this.options.ghostClass, true);
 
         Sortable.active = this;
 
@@ -648,7 +648,7 @@
           _off(dragEl, 'dragend', this);
 
           _disableDraggable(dragEl);
-          _toggleClass(dragEl, this.options.ghostClass, false);
+          //_toggleClass(dragEl, this.options.ghostClass, false);
 
           if (rootEl !== dragEl.parentNode) {
             newIndex = _index(dragEl);

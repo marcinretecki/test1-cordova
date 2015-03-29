@@ -35,6 +35,7 @@ function Sentence() {
     // here are stored all strange things
     this.store = {
         content: document.getElementById('content'),    // main div
+        contentPosition: null,                          // position of main div
         words:   [],                                    // stored words for reference
         clones:  [],                                    // stored clones for reference
         wordPositions:  [],                             // stored positions for reference
@@ -131,6 +132,8 @@ Sentence.prototype = {
         var that = this,
             wrapper = document.getElementById('wrapper-items'),
             wrapperPosition = wrapper.getBoundingClientRect(),
+            content = document.getElementById('content'),
+            contentPosition = content.getBoundingClientRect(),
             words = this.store.words,
             clones = document.createElement('div'),
             wrapperBack = document.createElement('div'),
@@ -195,6 +198,8 @@ Sentence.prototype = {
         }
 
         this._newSortable();
+
+        this._watchResize(true);
     },
 
     showTrans: function() {
@@ -212,11 +217,6 @@ Sentence.prototype = {
     },
 
     animate: function() {
-        /*  - bierzemy wszystkie słowa i obliczamy ich nowe miejsce
-            - robimy animację między starym a nowym miejscem
-            - zapisujemy nowe miejsce
-        */
-
         var that = this,
             words = this.store.words,
             clones = this.store.clones,
@@ -227,12 +227,10 @@ Sentence.prototype = {
             wrapperPosition = wrapper.getBoundingClientRect(),
             wordPositionsNew = [],
             len = words.length,
-            wordPosition,
-            lastChild,lastChildPosition,newPadding,
-            count;
+            wordPosition, lastChild, lastChildPosition, newPadding, count, animateClones, animateWrapperBack;
 
         for (var i=0; i < len; i++) {
-            words[i].style.paddingRight = '';   // reset padding;
+            //words[i].style.paddingRight = '';   // reset padding;
         }
 
         for (var i=0; i < len; i++) {
@@ -245,34 +243,38 @@ Sentence.prototype = {
         }
         this.store.wordPositions = wordPositionsNew;    // store each word's position
 
-        for (var i=0; i < len; i++) {
-            Velocity( clones[i], {
-                translateX: [wordPositionsNew[i].left, wordPositionsOld[i].left],
-                translateY: [wordPositionsNew[i].top, wordPositionsOld[i].top],
-            }, { duration: that.opts.duration, easing: that.opts.easing,
-                 queue: false
-            });
-
-            if (len - 1 === i) {
-                // on the last
-                if ( wrapperPositionOld.top !== wrapperPosition.top) {
-                    console.log('different wrapperPositions')
-                    Velocity(wrapperBack, {
-                        height: (wrapperPosition.height) + 6,
-                        translateY: [-( (wrapperPosition.height/2) + 3), 0]
-                    }, {duration: 200, easing: that.opts.easing, delay: 100
-                    });
-                    this.store.wrapperPosition = wrapperPosition;
-                }
+        animateClones = this._debounce(function() {
+            for (var i=0; i < len; i++) {
+                Velocity( clones[i], {
+                    translateX: [wordPositionsNew[i].left, wordPositionsOld[i].left],
+                    translateY: [wordPositionsNew[i].top, wordPositionsOld[i].top],
+                }, { duration: that.opts.duration, easing: that.opts.easing,
+                     queue: false
+                });
             }
-        }
+        }, 10);
 
+        animateClones();
+
+        animateWrapperBack = this._debounce(function() {
+            if ( wrapperPositionOld.top !== wrapperPosition.top) {
+                console.log('different wrapperPositions')
+                Velocity(wrapperBack, {
+                    height: (wrapperPosition.height) + 6,
+                    translateY: -( (wrapperPosition.height/2) + 3),
+                }, {duration: 200, easing: that.opts.easing, delay: 100
+                });
+                that.store.wrapperPosition = wrapperPosition;
+            }
+        }, 200);
+
+        animateWrapperBack();
 
         // add padding to the last element
-        lastChild = wrapper.lastChild;
-        lastChildPosition = lastChild.getBoundingClientRect();
-        newPadding = Math.floor( wrapperPosition.right - lastChildPosition.right );
-        Velocity.hook(lastChild, 'paddingRight', newPadding + "px" );
+        //lastChild = wrapper.lastChild;
+        //lastChildPosition = lastChild.getBoundingClientRect();
+        //newPadding = Math.floor( wrapperPosition.right - lastChildPosition.right );
+        //Velocity.hook(lastChild, 'paddingRight', newPadding + "px" );
 
     },
 
@@ -469,11 +471,7 @@ Sentence.prototype = {
         try {
             var pos = el.dataset.pos - 1,
                 clone = this.store.clones[pos];
-
             Velocity.hook(clone, "opacity", op);
-
-
-
         } catch (ex){}
     },
 
@@ -522,6 +520,42 @@ Sentence.prototype = {
     _destroySortable: function() {
         var sortable = this.store.sortable;
         sortable.destroy();
+    },
+
+
+    _watchResize: function(state) {
+        var resize
+            that = this;
+        if (state) {
+            resize = that._debounce(function() {
+                that.animate();
+            }, 250);
+            that.store.resize = resize;
+            window.addEventListener('resize', resize, false);
+        } else {
+            resize = that.store.resize;
+            window.removeEventListener('resize', resize, false);
+        }
+    },
+
+
+    // Returns a function, that, as long as it continues to be invoked, will not
+    // be triggered. The function will be called after it stops being called for
+    // N milliseconds. If `immediate` is passed, trigger the function on the
+    // leading edge, instead of the trailing.
+    _debounce: function(func, wait, immediate) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
     },
 
     // legacy

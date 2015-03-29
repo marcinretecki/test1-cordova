@@ -61,7 +61,7 @@ font-style:normal;
 .items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;padding:$space-4 $space $space-6;font-size:0;}
 .items-block:before{content: '';display:inline-block;height:100%;vertical-align:middle;}
 
-.items{display:inline-block;position:relative;width:100%;vertical-align:middle;}
+.items{display:inline-block;width:100%;vertical-align:middle;}
 
 .btn-outer{display:inline-block;position:relative;z-index:5;padding:3px;opacity:0;
 color:#fff;text-align:center;text-decoration:none;text-transform:none;text-shadow:none;white-space: normal;

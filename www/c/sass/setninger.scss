@@ -58,7 +58,7 @@ font-style:normal;
 
 /* Sentence */
 
-.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;padding:$space-4 $space $space-6;font-size:0;}
+.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;padding:$space-4 $space $space-4;font-size:0;}
 .items-block:before{content: '';display:inline-block;height:100%;vertical-align:middle;}
 
 .items{display:inline-block;width:100%;vertical-align:middle;}
@@ -77,7 +77,7 @@ font:400 $size-2/1.1875 Bariol,Palatino,"Palatino Linotype","URW Palladio L","Dr
 .clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
 
 
-.wrapper-back{position:absolute;z-index:0;left:-2.5rem;top:50%;right:-2.5rem;height:0;background:#60b3b3;content:"";border-top:1px solid rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.15);
+.wrapper-back{position:absolute;z-index:0;left:0;top:50%;right:0;height:0;background:#60b3b3;content:"";border-top:1px solid rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.15);
 transform:scaleY(0);
 transition:none;
 }

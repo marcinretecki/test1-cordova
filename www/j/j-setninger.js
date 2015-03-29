@@ -26,6 +26,14 @@ Structure:
 
 
 
+What happens when:
+
+-
+
+*/
+
+/*
+- pamiętaj, żeby wszystkie event listeners przenieść na document itd.... (to ważne)
 */
 
 
@@ -34,24 +42,27 @@ function Sentence() {
 
     // here are stored all strange things
     this.store = {
-        content: document.getElementById('content'),    // main div
-        contentPosition: null,                          // position of main div
-        words:   [],                                    // stored words for reference
-        clones:  [],                                    // stored clones for reference
-        wordPositions:  [],                             // stored positions for reference
-        wrapperPosition: null                           // wrapper position for reference
+        content:            document.getElementById('content'), // main div
+        contentPosition:    null,                               // position of main div
+        sentence:           null,                               // whole sentence object
+        words:              [],                                 // words for reference
+        clones:             [],                                 // clones for reference
+        wordPositions:      [],                                 // positions for reference
+        wrapper:            null,                               // wrapper for reference
+        wrapperBack:        null,                               // wrapperBack for referance
+        wrapperBackHeight:  0,                                  // wrapperBack height
     };
 
+    // often used contants
     this.opts = {
         easing: [0.645,0.045,0.355,1],
         duration: 200
-    }
+    };
+
+    // Is the user working on a sentence or not?    // can be used for various checks
+    this.rolling = false;
 
 }
-
-/*
-- pamiętaj, żeby wszystkie event listeners przenieść na document itd.... (to ważne)
-*/
 
 Sentence.prototype = {
 
@@ -64,8 +75,8 @@ Sentence.prototype = {
             menuItemOne = document.createElement('button'),
             menuItemTwo = menuItemOne.cloneNode(true),
             menuItemThree = menuItemOne.cloneNode(true),
-            menuItems,
-            menuItem;
+            content = this.store.content,
+            menuItems, menuItem;
 
         menu.className = "items center";
         menu.id = "menu-home";
@@ -92,7 +103,8 @@ Sentence.prototype = {
         menu.appendChild(menuItemTwo);
         menu.appendChild(menuItemThree);
 
-        this.store.content.appendChild(menu);
+        content.appendChild(menu);                                          // append menu
+        this.store.contentPosition = content.getBoundingClientRect();       // store content position
 
         menuItems = [menuItemOne, menuItemTwo, menuItemThree];
 
@@ -130,117 +142,106 @@ Sentence.prototype = {
 
     comeIn: function() {
         var that = this,
-            wrapper = document.getElementById('wrapper-items'),
-            wrapperPosition = wrapper.getBoundingClientRect(),
-            content = document.getElementById('content'),
-            contentPosition = content.getBoundingClientRect(),
+            wrapper = this.store.wrapper,
+            contentPosition = this.store.contentPosition,
             words = this.store.words,
-            clones = document.createElement('div'),
-            wrapperBack = document.createElement('div'),
             x = 400,
-            word,
-            wordPosition,
-            clone,
-            pos,
-            countStoredClones,
-            countWordPositions,
             wordPositionObj = [],
-            storedClones = [];
+            storedClones = [],
+            countStoredClones, countWordPositions, word, wordPosition, clone, pos, wrapperBackHeight,
+
+            // new nodes
+            clones = document.createElement('div'),
+            wrapperBack = document.createElement('div');
 
 
         // prepare new nodes
         clones.className = 'clones';
         wrapperBack.className = 'wrapper-back';
 
-        for (var i=0, len=words.length; i < len; i++) {
-            word = words[i];
-            wordPosition = word.getBoundingClientRect();
-            wordPositionObj[i] = {
-                left: wordPosition.left - wrapperPosition.left,
-                top: wordPosition.top - wrapperPosition.top,
-            };
+        (function() {
+            for (var i=0, len=words.length; i < len; i++) {
+                word = words[i];
+                wordPosition = word.getBoundingClientRect();
+                wordPositionObj[i] = {
+                    left: wordPosition.left - contentPosition.left,
+                    top: wordPosition.top - contentPosition.top,
+                    bottom: wordPosition.bottom,
+                };
 
-            // store positions
-            countWordPositions = this.store.wordPositions.push(wordPositionObj);
+                countWordPositions = that.store.wordPositions.push(wordPositionObj);    // pre-store positions
 
-            clone = word.cloneNode(true);
-            clone.className = clone.className + " clone";
+                clone = word.cloneNode(true);
+                clone.className = clone.className + " clone";
 
-            word.setAttribute('data-pos', i + 1);
+                Velocity.hook(clone, "translateX", wordPositionObj[i].left + x + "px");
+                Velocity.hook(clone, "translateY", wordPositionObj[i].top + "px");
 
-            Velocity.hook(clone, "translateX", wordPositionObj[i].left + x + "px");
-            Velocity.hook(clone, "translateY", wordPositionObj[i].top + "px");
-
-            clones.appendChild(clone);
-
-            // store clones
-            countStoredClones = storedClones.push(clone);
-        }
+                clones.appendChild(clone);                          // append clones
+                countStoredClones = storedClones.push(clone);       // pre-store clones
+            }
+        })();
 
         this.store.clones = storedClones;               // store clones
         this.store.wordPositions = wordPositionObj;     // store positions
         this.store.wrapperBack = wrapperBack;           // store background
-        this.store.wrapperPosition = wrapperPosition    // store wrapper positions
 
         wrapper.parentNode.appendChild(clones);         // append clones
         wrapper.parentNode.appendChild(wrapperBack);    // append background
 
-        Velocity.hook(wrapperBack, 'height', wrapperPosition.height + 6 + "px");
+        // prepare wrapperBack
+        this._checkBackSize();
+        wrapperBackHeight = this.store.wrapperBackHeight;
+        wrapperBack.style.height = wrapperBackHeight + "px";
+        Velocity.hook(wrapperBack, 'translateY', -(wrapperBackHeight / 2) + "px");
+        Velocity.hook(wrapperBack, 'scaleY', 0);
 
-        Velocity(wrapperBack, { scaleY: [1, 0], translateY: [-( (wrapperPosition.height/2) + 3), 0]}, {duration: 300, easing: that.opts.easing, queue: false});
+        Velocity(wrapperBack, { scaleY: [1, 0] }, {duration: 300, easing: that.opts.easing, queue: false});
 
-        for (var i=0, len=words.length; i < len; i++) {
-            Velocity(
-                storedClones[i],
-                { opacity: 1, translateX: [wordPositionObj[i].left, wordPositionObj[i].left + x]},
-                { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 + 200, queue: false }
-            );
-        }
+        (function() {
+            for (var i=0, len=words.length; i < len; i++) {
+                Velocity(
+                    storedClones[i],
+                    { opacity: 1, translateX: [wordPositionObj[i].left, wordPositionObj[i].left + x]},
+                    { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 + 200, queue: false }
+                );
+            }
+        })();
 
         this._newSortable();
 
         this._watchResize(true);
     },
 
-    showTrans: function() {
-        var that = this,
-            translation = document.querySelector(".translation"),
-            spans = translation.querySelectorAll("span"),
-            span;
-
-        for (var i=0, len=spans.length; i < len; i++) {
-            span = spans[i];
-            Velocity( span, { opacity: [1, 0],  translateX: [0, '200px'] }, { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 } );
-        }
-
-        this._removeFooter();
-    },
-
     animate: function() {
         var that = this,
             words = this.store.words,
             clones = this.store.clones,
+            contentPosition = this.store.contentPosition,
             wrapperBack = this.store.wrapperBack,
             wordPositionsOld = this.store.wordPositions,
-            wrapperPositionOld = this.store.wrapperPosition,
-            wrapper = document.getElementById('wrapper-items'),
-            wrapperPosition = wrapper.getBoundingClientRect(),
+            wrapper = this.store.wrapper,
             wordPositionsNew = [],
             len = words.length,
             wordPosition, lastChild, lastChildPosition, newPadding, count, animateClones, animateWrapperBack;
 
-        for (var i=0; i < len; i++) {
-            //words[i].style.paddingRight = '';   // reset padding;
-        }
+        (function() {
+            for (var i=0; i < len; i++) {
+                //words[i].style.paddingRight = '';   // reset padding;
+            }
+        })();
 
-        for (var i=0; i < len; i++) {
-            wordPosition = words[i].getBoundingClientRect();
+        (function() {
+            for (var i=0; i < len; i++) {
+                wordPosition = words[i].getBoundingClientRect();
 
-            wordPositionsNew[i] = {
-                left: wordPosition.left - wrapperPosition.left,
-                top: wordPosition.top - wrapperPosition.top,
-            };
-        }
+                wordPositionsNew[i] = {
+                    left: wordPosition.left - contentPosition.left,
+                    top: wordPosition.top - contentPosition.top,
+                    bottom: wordPosition.bottom - contentPosition.top,
+                };
+            }
+        })();
         this.store.wordPositions = wordPositionsNew;    // store each word's position
 
         animateClones = this._debounce(function() {
@@ -257,17 +258,13 @@ Sentence.prototype = {
         animateClones();
 
         animateWrapperBack = this._debounce(function() {
-            if ( wrapperPositionOld.top !== wrapperPosition.top) {
-                console.log('different wrapperPositions')
-                Velocity(wrapperBack, {
-                    height: (wrapperPosition.height) + 6,
-                    translateY: -( (wrapperPosition.height/2) + 3),
-                }, {duration: 200, easing: that.opts.easing, delay: 100
-                });
-                that.store.wrapperPosition = wrapperPosition;
-            }
-        }, 200);
+            var changedWrapperBack = that._checkBackSize();
+            if (changedWrapperBack) {
+                var wrapperBackHeight = that.store.wrapperBackHeight;
 
+                Velocity(wrapperBack, { height: wrapperBackHeight, translateY: -(wrapperBackHeight / 2) + "px" }, {duration: 300, easing: that.opts.easing, queue: false});
+            }
+        }, 100);
         animateWrapperBack();
 
         // add padding to the last element
@@ -276,6 +273,20 @@ Sentence.prototype = {
         //newPadding = Math.floor( wrapperPosition.right - lastChildPosition.right );
         //Velocity.hook(lastChild, 'paddingRight', newPadding + "px" );
 
+    },
+
+    showTrans: function() {
+        var that = this,
+            translation = document.querySelector(".translation"),
+            spans = translation.querySelectorAll("span"),
+            span;
+
+        for (var i=0, len=spans.length; i < len; i++) {
+            span = spans[i];
+            Velocity( span, { opacity: [1, 0],  translateX: [0, '200px'] }, { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 } );
+        }
+
+        this._removeFooter();
     },
 
     _createSentence: function(level, no) {
@@ -290,25 +301,31 @@ Sentence.prototype = {
             s = sentence['s'],              // array of good answers
             b = sentence['b'];              // string - word you can't touch
 
-            if (b === undefined) {          // if there are no restricted word
-                b = false;
-            }
+        if (b === undefined) {          // if there are no restricted word
+            b = false;
+        }
 
-        // New nodes
-        var wrapper = document.createElement('div'),
+        var content = this.store.content,
+            // New nodes
+            itemsOnBoard = document.createElement('div'),
+            wrapper = document.createElement('div'),
             word = document.createElement('div'),
             wordInner = document.createElement('div'),
-            spill, clone, items;
+            spill, clone, items, wordsCount, spillCount;
+
+        spill = s[0].concat();      // copy the first correct answer
 
         // Prepare nodes
+        itemsOnBoard.id = 'items';
+        itemsOnBoard.className = 'items items-on-board';
         wrapper.id = 'wrapper-items';
         word.className = 'btn-outer';
         wordInner.className = "btn-word";
 
-        word.appendChild(wordInner);
+        word.appendChild(wordInner);        // append inside the word
 
         // sort words randomly
-        spill = s['0'].sort(function() { return 0.5 - Math.random(); });
+        spill = spill.sort(function() { return 0.5 - Math.random(); });
 
         // Check if spill is not the same as correct answers
         function checkSpill(spill) {
@@ -319,9 +336,9 @@ Sentence.prototype = {
             });
         }
 
-        // sort once again while true
+        // sort once again while spill and answer are the same
         while (checkSpill(spill)) {
-            spill = s['0'].sort(function() { return 0.5 - Math.random(); });
+            spill = spill.sort(function() { return 0.5 - Math.random(); });
         }
 
         // Append words into the wrapper
@@ -331,19 +348,65 @@ Sentence.prototype = {
             wrapper.appendChild(clone);
 
             // store words
-            var count = this.store.words.push(clone);
+            wordsCount = this.store.words.push(clone);
         }
 
+        this.store.wrapper = wrapper;                   // store wrapper
+
         this._removeHome();                             // remove the menu
-        items = this._createItemsWrapper();             // create and return items wrapper
-        items.insertBefore(wrapper, items.firstChild);  // append the wrapper
+        itemsOnBoard.appendChild(wrapper);              // append wrapper
+        content.appendChild(itemsOnBoard);              // append items-on-board
         this._createFooter();                           // create footer
         this._createTranslation(level, no);             // create translation
+
         this.comeIn();                                  // let the sentence in
     },
 
+    _checkSentence: function() {
+        // check if sentence is finished
+        var that = this,
+            sentence = this.store.sentence,
+            wrapper = this.store.wrapper,
+            wordsOrder = [],
+            currentResult = false,
+            checkSentence,
+            words, count, result, currentSentence;
+
+        checkSentence = this._debounce(function(){
+            words = wrapper.querySelectorAll('.btn-word');
+
+            (function() {
+                for (var i=0, len=words.length; i < len; i++) {
+                    count = wordsOrder.push(words[i].innerHTML);
+                }
+            })();
+
+            result = function() {
+                for (var i=0, len=sentence.s.length; i < len; i++) {
+                    currentSentence = sentence.s[i];
+                    (function() {
+                        for (var i=0, len=wordsOrder.length; i < len; i++) {
+                            if (wordsOrder[i] !== currentSentence[i]) { return false; }
+                        }
+                        currentResult = true;
+                    })();
+                }
+                return currentResult;
+            };
+
+            if ( result() ) {
+                that._finishedSentence();       // if the sentence is correct call the end
+            }
+
+        }, 200);
+
+        checkSentence();
+
+    },
+
     _finishedSentence: function() {
-        // when the user finishes the
+        this._destroySortable();
+        this.showTrans();
     },
 
     _createTranslation: function() {
@@ -472,30 +535,47 @@ Sentence.prototype = {
             var pos = el.dataset.pos - 1,
                 clone = this.store.clones[pos];
             Velocity.hook(clone, "opacity", op);
-        } catch (ex){}
+        } catch (ex){};
     },
 
-    _createItemsWrapper: function() {
-        var content = this.store.content,
-            items = document.createElement('div');
-
-        items.className = 'items items-on-board';
-        items.id = 'items';
-        content.appendChild(items);
-
-        return items;
-    },
-
-    _getWrapper: function() {
+    _checkBackSize: function() {
         try {
-            var wrapper = document.getElementById('wrapper-items');
-            return wrapper;
-        } catch (ex) {}
+            var wordPositions = this.store.wordPositions,
+                wrapperBack = this.store.wrapperBack,
+                wrapperBackHeight = this.store.wrapperBackHeight,
+                wordTops = [],
+                wordBottoms = [],
+                top, bottom, newHeight;
+
+            for (var i=0, len=wordPositions.length; i < len; i++) {
+                top = wordPositions[i].top;
+                bottom = wordPositions[i].bottom;
+
+                wordTops.push(top);
+                wordBottoms.push(bottom);
+            }
+
+            wordTops.sort();
+            wordBottoms.sort();
+
+            newHeight = Math.floor( wordBottoms[wordBottoms.length -1] - wordTops[0] ) + 6;
+
+            if (wrapperBackHeight !== newHeight) {
+                this.store.wrapperBackHeight = newHeight;
+
+                return true;                               // if the size changed, return true
+            }
+
+
+        } catch(ex) {};
     },
 
     _newSortable: function() {
-        var wrapper = this._getWrapper(),
+        var wrapper = this.store.wrapper,
             that = this,
+            sortable;
+
+        if (wrapper) {
             sortable = new Sortable(wrapper, {
                 animation: 0,
 
@@ -508,13 +588,12 @@ Sentence.prototype = {
                 onEnd: function (evt) {
                     that._toggleOpacity(evt.item, "1");
 
-                    // te mogą się przydać do ustalenia czy zdanie jest ułożone
-                    //evt.oldIndex;  // element's old index within parent
-                    //evt.newIndex;  // element's new index within parent
+                    that._checkSentence();
                 },
             });
 
-        this.store.sortable = sortable;
+            this.store.sortable = sortable;
+        }
     },
 
     _destroySortable: function() {
@@ -558,42 +637,6 @@ Sentence.prototype = {
         };
     },
 
-    // legacy
-    _velocity: function () {
-        var that = this,
-            wrapper = document.querySelector('#items'),
-            wrapper_position = wrapper.getBoundingClientRect(),
-            words = wrapper.querySelectorAll('.btn-word'),
-            clones = wrapper.parentNode.querySelector('.clones').querySelectorAll('.clone'),
-            word,
-            word_position,
-            clone,
-            pos;
-
-        for (var i=0, len=words.length; i < len; i++) {
-            word = words[i];
-            word_position = word.getBoundingClientRect();
-
-            pos = word.getAttribute('data-pos') - 1;
-            clone = clones[pos];
-
-            //Velocity.hook(clone, "translateX", word_position.left - wrapper_position.left - 10 + "px");
-            //Velocity.hook(clone, "translateY", word_position.top - wrapper_position.top - 10 + "px");
-
-            // wyciągnij to z loopa!
-
-            Velocity(
-                clone,
-                {
-                    translateX: word_position.left - wrapper_position.left - 10 + "px",
-                    translateY: word_position.top - wrapper_position.top - 10 + "px",
-                },
-                { duration: that.opts.duration, easing: that.opts.easing }
-            );
-
-        }
-
-    },
 
 };
 

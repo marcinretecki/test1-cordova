@@ -20,7 +20,7 @@ font-style:normal;
 .header{position:absolute;left:0;right:0;top:0;padding-top:20px;background:$dark-btn;}
 .header-content{width:100%;text-align:center;background:#fff}
 .header-content a{display:inline-block;border:0;color:$font-dark;font-family:Bariol,$bariol}
-.header-content .logo{color:$font-dark;}
+.header-content .logo{float:none;color:$font-dark;}
 .header-content a:hover,.header-content a:active,.header-content a:focus{background:$beige;color:#000;}
 
 .header-trans{opacity:1;border:none;background:$white;}
@@ -29,10 +29,6 @@ font-style:normal;
 .header-content [class*="col-"]{
   margin-bottom:0;
 }
-
-
-.header-content .right{position:absolute;right:0}
-.header-content .left{position:absolute;left:0}
 
 
 /* Menu */
@@ -77,7 +73,7 @@ font:400 $size-2/1.1875 Bariol,Palatino,"Palatino Linotype","URW Palladio L","Dr
 .clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
 
 
-.wrapper-back{position:absolute;z-index:0;left:0;top:50%;right:0;height:0;background:#60b3b3;content:"";border-top:1px solid rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.15);
+.wrapper-back{position:absolute;z-index:0;left:0;top:50%;right:0;height:0;background:$green-light;content:"";border-top:1px solid rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.15);
 transform:scaleY(0);
 transition:none;
 }
@@ -89,7 +85,16 @@ transition:none;
 .section-red .btn-word{background-color:$red;}
 
 
-.translation{position:absolute;bottom:5rem;left:0;right:0;padding:0 1.25rem;margin:0;font-style:italic;transition:none;text-align:center}
+
+.wrapper-next-arr{position:absolute;bottom:$space-4;left:0;right:0;}
+.next-arr{display:block;width:100px;height:100px;margin:0 auto;border-radius:50% !important;border:none;background:$green-light;
+transform:scale(0);
+transition:none;
+}
+
+
+
+.translation{position:absolute;bottom:(-$space);left:0;right:0;padding:$space;margin:0;font-style:italic;transition:none;text-align:center}
 .translation span{display:inline-block;opacity:0;}
 
 

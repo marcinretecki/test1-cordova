@@ -140,6 +140,10 @@ Sentence.prototype = {
 
     // we need a way to determine sentence number
 
+
+    // remove creating new nodes from this function and move to seperate
+    // comeIn should only change view, not create anythin
+
     comeIn: function() {
         var that = this,
             wrapper = this.store.wrapper,
@@ -289,6 +293,27 @@ Sentence.prototype = {
         this._removeFooter();
     },
 
+    _showNextArr: function() {
+        try {
+            var that = this,
+                nextArrWrap = document.createElement('div'),
+                nextArr = document.createElement('button'),
+                itemsOnBoard = this.store.itemsOnBoard;
+
+            // prepare new node
+            nextArrWrap.className = 'wrapper-next-arr';
+            nextArr.className = 'next-arr';
+            nextArr.id = 'next-arr';
+            nextArr.type = 'button';
+            nextArr.innerHTML = '&raquo';
+            nextArrWrap.appendChild(nextArr);
+            itemsOnBoard.appendChild(nextArrWrap);
+
+            Velocity(nextArr, {scale: [1, 0]}, { duration: 400, easing: that.opts.easing});
+
+        } catch(ex){}
+    },
+
     _createSentence: function(level, no) {
         // maybe this logic should be inside _getSentence, while this method should only show the process?
 
@@ -328,6 +353,11 @@ Sentence.prototype = {
         spill = spill.sort(function() { return 0.5 - Math.random(); });
 
         // Check if spill is not the same as correct answers
+
+        ///////////////
+        // TO NIE DZIAŁA........
+        //////////////
+
         function checkSpill(spill) {
             var result = s.forEach(function(item, index, array) {
                 if (spill === item) {
@@ -352,6 +382,7 @@ Sentence.prototype = {
         }
 
         this.store.wrapper = wrapper;                   // store wrapper
+        this.store.itemsOnBoard = itemsOnBoard;         // store items-on-board
 
         this._removeHome();                             // remove the menu
         itemsOnBoard.appendChild(wrapper);              // append wrapper
@@ -407,11 +438,12 @@ Sentence.prototype = {
     _finishedSentence: function() {
         this._destroySortable();
         this.showTrans();
+        this._showNextArr();
     },
 
     _createTranslation: function() {
         var that = this,
-            content = this.store.content,
+            wrapperBack = this.store.wrapperBack,
             sentence = this.store.sentence,
             t = sentence['t'], // string - translation
             translation = document.createElement('p'),
@@ -430,7 +462,7 @@ Sentence.prototype = {
         translation.id = 'translation';
         translation.className = 'translation';
 
-        content.appendChild(translation);
+        wrapperBack.appendChild(translation);
     },
 
     _createFooter: function() {

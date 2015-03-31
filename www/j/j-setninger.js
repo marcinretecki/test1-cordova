@@ -51,16 +51,21 @@ function Sentence() {
         wrapper:            null,                               // wrapper for reference
         wrapperBack:        null,                               // wrapperBack for referance
         wrapperBackHeight:  0,                                  // wrapperBack height
+        wrapperBackTop:     0,                                  // wrapperBack top
     };
 
     // often used contants
     this.opts = {
-        easing: [0.645,0.045,0.355,1],
-        duration: 200
+        easing:     [0.645,0.045,0.355,1],
+        duration:   200,
+        valueX:     400
     };
 
-    // Is the user working on a sentence or not?    // can be used for various checks
-    this.rolling = false;
+    // Is the user working on a sentence or not?
+    this.state = {
+        rolling: false,
+        transIn: false
+    };
 
 }
 
@@ -129,7 +134,7 @@ Sentence.prototype = {
                 complete: function(elements) {
                     elements.forEach( function(item, index, array) {
                         if ( item === menuItems[menuItems.length - 1] ) {
-                            that._createSentence(level, no);
+                            that.newSentence(level, no);
                         }
                     } );
                 }
@@ -138,83 +143,43 @@ Sentence.prototype = {
         }
     },
 
+    newSentence: function(level, no) {
+        this._removeHome();                     // remove the menu
+        this._createSentence(level, no);        // create the words
+        this._createFooter();                   // create footer
+        this._createClones();                   // clone the words
+        this._createWrapperBack();              // create the background
+        this._createTranslation(level, no);     // create translation
+        this._newSortable();                    // init. Sortable
+        this._comeIn();                         // let the sentence in
+        this._watchResize(true);                // watch browser changes
+        this.state.rolling = true;              // the user is on the sentence
+    },
+
     // we need a way to determine sentence number
 
 
     // remove creating new nodes from this function and move to seperate
     // comeIn should only change view, not create anythin
 
-    comeIn: function() {
+    _comeIn: function() {
         var that = this,
-            wrapper = this.store.wrapper,
             contentPosition = this.store.contentPosition,
-            words = this.store.words,
-            x = 400,
-            wordPositionObj = [],
-            storedClones = [],
-            countStoredClones, countWordPositions, word, wordPosition, clone, pos, wrapperBackHeight,
-
-            // new nodes
-            clones = document.createElement('div'),
-            wrapperBack = document.createElement('div');
-
-
-        // prepare new nodes
-        clones.className = 'clones';
-        wrapperBack.className = 'wrapper-back';
+            wordPositions = this.store.wordPositions,
+            clones = this.store.clones,
+            x = this.opts.valueX,
+            left;
 
         (function() {
-            for (var i=0, len=words.length; i < len; i++) {
-                word = words[i];
-                wordPosition = word.getBoundingClientRect();
-                wordPositionObj[i] = {
-                    left: wordPosition.left - contentPosition.left,
-                    top: wordPosition.top - contentPosition.top,
-                    bottom: wordPosition.bottom,
-                };
-
-                countWordPositions = that.store.wordPositions.push(wordPositionObj);    // pre-store positions
-
-                clone = word.cloneNode(true);
-                clone.className = clone.className + " clone";
-
-                Velocity.hook(clone, "translateX", wordPositionObj[i].left + x + "px");
-                Velocity.hook(clone, "translateY", wordPositionObj[i].top + "px");
-
-                clones.appendChild(clone);                          // append clones
-                countStoredClones = storedClones.push(clone);       // pre-store clones
-            }
-        })();
-
-        this.store.clones = storedClones;               // store clones
-        this.store.wordPositions = wordPositionObj;     // store positions
-        this.store.wrapperBack = wrapperBack;           // store background
-
-        wrapper.parentNode.appendChild(clones);         // append clones
-        wrapper.parentNode.appendChild(wrapperBack);    // append background
-
-        // prepare wrapperBack
-        this._checkBackSize();
-        wrapperBackHeight = this.store.wrapperBackHeight;
-        wrapperBack.style.height = wrapperBackHeight + "px";
-        Velocity.hook(wrapperBack, 'translateY', -(wrapperBackHeight / 2) + "px");
-        Velocity.hook(wrapperBack, 'scaleY', 0);
-
-        Velocity(wrapperBack, { scaleY: [1, 0] }, {duration: 300, easing: that.opts.easing, queue: false});
-
-        (function() {
-            for (var i=0, len=words.length; i < len; i++) {
+            for (var i=0, len=clones.length; i < len; i++) {
+                left = Math.round( wordPositions[i].left );
                 Velocity(
-                    storedClones[i],
-                    { opacity: 1, translateX: [wordPositionObj[i].left, wordPositionObj[i].left + x]},
+                    clones[i],
+                    { opacity: 1, translateX: [left, left + x]},
                     { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 + 200, queue: false }
                 );
             }
         })();
-
-        this._newSortable();
-
-        this._watchResize(true);
     },
 
     animate: function() {
@@ -240,7 +205,7 @@ Sentence.prototype = {
                 wordPosition = words[i].getBoundingClientRect();
 
                 wordPositionsNew[i] = {
-                    left: wordPosition.left - contentPosition.left,
+                    left: Math.round( wordPosition.left ) - contentPosition.left,
                     top: wordPosition.top - contentPosition.top,
                     bottom: wordPosition.bottom - contentPosition.top,
                 };
@@ -253,20 +218,21 @@ Sentence.prototype = {
                 Velocity( clones[i], {
                     translateX: [wordPositionsNew[i].left, wordPositionsOld[i].left],
                     translateY: [wordPositionsNew[i].top, wordPositionsOld[i].top],
-                }, { duration: that.opts.duration, easing: that.opts.easing,
-                     queue: false
+                    //left: [wordPositionsNew[i].left, wordPositionsOld[i].left],
+                    //top: [wordPositionsNew[i].top, wordPositionsOld[i].top],
+                }, { duration: that.opts.duration, easing: that.opts.easing, queue: false,
                 });
             }
         }, 10);
-
         animateClones();
 
         animateWrapperBack = this._debounce(function() {
             var changedWrapperBack = that._checkBackSize();
             if (changedWrapperBack) {
                 var wrapperBackHeight = that.store.wrapperBackHeight;
+                var wrapperBackTop = that.store.wrapperBackTop;
 
-                Velocity(wrapperBack, { height: wrapperBackHeight, translateY: -(wrapperBackHeight / 2) + "px" }, {duration: 300, easing: that.opts.easing, queue: false});
+                Velocity(wrapperBack, { height: wrapperBackHeight, top: wrapperBackTop }, {duration: 300, easing: that.opts.easing, queue: false});
             }
         }, 100);
         animateWrapperBack();
@@ -280,6 +246,8 @@ Sentence.prototype = {
     },
 
     showTrans: function() {
+        if (this.state.transIn) { return; }
+
         var that = this,
             translation = document.querySelector(".translation"),
             spans = translation.querySelectorAll("span"),
@@ -291,6 +259,11 @@ Sentence.prototype = {
         }
 
         this._removeFooter();
+        this.state.transIn = true;
+    },
+
+    nextSentence: function() {
+        console.log('next sentence');
     },
 
     _showNextArr: function() {
@@ -306,13 +279,21 @@ Sentence.prototype = {
             nextArr.id = 'next-arr';
             nextArr.type = 'button';
             nextArr.innerHTML = '&raquo';
-            nextArrWrap.appendChild(nextArr);
-            itemsOnBoard.appendChild(nextArrWrap);
 
-            Velocity(nextArr, {scale: [1, 0]}, { duration: 400, easing: that.opts.easing});
+            nextArr.addEventListener('click', function _fu() {
+                that.nextSentence();
+                nextArr.removeEventListener('click', _fu, false);
+            }, false);
+
+            nextArrWrap.appendChild(nextArr);               // append into arrow wrapper
+            itemsOnBoard.appendChild(nextArrWrap);          // append into items-on-board
+
+            Velocity(nextArr, {scale: [1, 0]}, { duration: 400, easing: that.opts.easing, delay: 200});
 
         } catch(ex){}
     },
+
+
 
     _createSentence: function(level, no) {
         // maybe this logic should be inside _getSentence, while this method should only show the process?
@@ -374,6 +355,7 @@ Sentence.prototype = {
         // Append words into the wrapper
         for (var i=0, len=spill.length; i < len; i++) {
             clone = word.cloneNode(true);
+            clone.dataset.pos = i + 1;
             clone.firstChild.innerHTML = spill[i];
             wrapper.appendChild(clone);
 
@@ -384,17 +366,13 @@ Sentence.prototype = {
         this.store.wrapper = wrapper;                   // store wrapper
         this.store.itemsOnBoard = itemsOnBoard;         // store items-on-board
 
-        this._removeHome();                             // remove the menu
+
         itemsOnBoard.appendChild(wrapper);              // append wrapper
         content.appendChild(itemsOnBoard);              // append items-on-board
-        this._createFooter();                           // create footer
-        this._createTranslation(level, no);             // create translation
 
-        this.comeIn();                                  // let the sentence in
     },
 
-    _checkSentence: function() {
-        // check if sentence is finished
+    _checkSentence: function() {        // check if sentence is finished
         var that = this,
             sentence = this.store.sentence,
             wrapper = this.store.wrapper,
@@ -439,6 +417,80 @@ Sentence.prototype = {
         this._destroySortable();
         this.showTrans();
         this._showNextArr();
+    },
+
+    _createClones: function() {
+        var that = this,
+            wrapper = this.store.wrapper,
+            contentPosition = this.store.contentPosition,
+            words = this.store.words,
+            x = this.opts.valueX,
+            wordPositions = [],
+            storedClones = [],
+            countStoredClones, countWordPositions, word, wordPosition, clone,
+
+            // new node
+            clones = document.createElement('div');
+
+        // prepare new node
+        clones.className = 'clones';
+
+        // for each word, store its position and create a clone
+        (function() {
+            for (var i=0, len=words.length; i < len; i++) {
+                word = words[i];
+                wordPosition = word.getBoundingClientRect();
+                wordPositions[i] = {
+                    left: wordPosition.left - contentPosition.left,
+                    top: wordPosition.top - contentPosition.top,
+                    bottom: wordPosition.bottom,
+                };
+
+                countWordPositions = that.store.wordPositions.push(wordPositions);    // pre-store positions
+
+                clone = word.cloneNode(true);
+                clone.className = clone.className + " clone";
+
+                Velocity.hook(clone, "translateX", Math.round(wordPositions[i].left) + x + "px");
+                Velocity.hook(clone, "translateY", wordPositions[i].top + "px");
+                //Velocity.hook(clone, "left", wordPositions[i].left + x + "px");
+                //Velocity.hook(clone, "top", wordPositions[i].top + "px");
+
+                clones.appendChild(clone);                          // append clone
+                countStoredClones = storedClones.push(clone);       // pre-store clones
+            }
+        })();
+
+        this.store.clones = storedClones;               // store clones
+        this.store.wordPositions = wordPositions;     // store positions
+
+        wrapper.parentNode.appendChild(clones);         // append clones
+
+
+    },
+
+    _createWrapperBack: function() {
+        this._checkBackSize();
+        var that = this,
+            wrapper = this.store.wrapper,
+            wrapperBackHeight = this.store.wrapperBackHeight,
+            wrapperBackTop = this.store.wrapperBackTop,
+
+            // new node
+            wrapperBack = document.createElement('div');
+
+        // prepare new node
+        wrapperBack.className = 'wrapper-back';
+
+        wrapperBack.style.height = wrapperBackHeight + "px";
+        wrapperBack.style.top = wrapperBackTop + "px";
+        Velocity.hook(wrapperBack, 'scaleY', 0);
+
+        this.store.wrapperBack = wrapperBack;           // store background
+        wrapper.parentNode.appendChild(wrapperBack);    // append background
+
+        // animate background
+        Velocity(wrapperBack, { scaleY: [1, 0] }, {duration: 300, easing: that.opts.easing, queue: false});
     },
 
     _createTranslation: function() {
@@ -575,13 +627,14 @@ Sentence.prototype = {
             var wordPositions = this.store.wordPositions,
                 wrapperBack = this.store.wrapperBack,
                 wrapperBackHeight = this.store.wrapperBackHeight,
+                wrapperBackTop = this.store.wrapperBackTop,
                 wordTops = [],
                 wordBottoms = [],
                 top, bottom, newHeight;
 
             for (var i=0, len=wordPositions.length; i < len; i++) {
-                top = wordPositions[i].top;
-                bottom = wordPositions[i].bottom;
+                top = Math.round( wordPositions[i].top );
+                bottom = Math.round( wordPositions[i].bottom );
 
                 wordTops.push(top);
                 wordBottoms.push(bottom);
@@ -591,13 +644,13 @@ Sentence.prototype = {
             wordBottoms.sort();
 
             newHeight = Math.floor( wordBottoms[wordBottoms.length -1] - wordTops[0] ) + 6;
+            newTop = Math.floor( wordTops[0] - 3 );
 
             if (wrapperBackHeight !== newHeight) {
                 this.store.wrapperBackHeight = newHeight;
-
-                return true;                               // if the size changed, return true
+                this.store.wrapperBackTop = newTop;
+                return true;        // if the size changed, return true
             }
-
 
         } catch(ex) {};
     },

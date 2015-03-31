@@ -254,6 +254,8 @@
         // Apply effect
         //_toggleClass(dragEl, this.options.ghostClass, true);
 
+        sentence._toggleOpacity(dragEl, "0.5");
+
         Sortable.active = this;
 
         // Drag start event
@@ -649,6 +651,7 @@
 
           _disableDraggable(dragEl);
           //_toggleClass(dragEl, this.options.ghostClass, false);
+          sentence._toggleOpacity(dragEl, '1');
 
           if (rootEl !== dragEl.parentNode) {
             newIndex = _index(dragEl);

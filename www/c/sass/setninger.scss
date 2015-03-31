@@ -17,6 +17,8 @@ font-style:normal;
 -webkit-appearance: carret;
 -webkit-appearance: none;
 }
+html{font:200 100%/1.25 "Gill Sans", sans-serif}
+body{-webkit-text-size-adjust:none;}
 .header{position:absolute;left:0;right:0;top:0;padding-top:20px;background:$dark-btn;}
 .header-content{width:100%;text-align:center;background:#fff}
 .header-content a{display:inline-block;border:0;color:$font-dark;font-family:Bariol,$bariol}
@@ -29,6 +31,8 @@ font-style:normal;
 .header-content [class*="col-"]{
   margin-bottom:0;
 }
+
+p{font-size:22px}
 
 
 /* Menu */
@@ -54,28 +58,30 @@ font-style:normal;
 
 /* Sentence */
 
-.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;padding:$space-4 $space $space-4;font-size:0;}
+.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;padding:$space-4 $space $space-6;font-size:0;}
 .items-block:before{content: '';display:inline-block;height:100%;vertical-align:middle;}
 
 .items{display:inline-block;width:100%;vertical-align:middle;}
 
 .btn-outer{display:inline-block;position:relative;z-index:5;padding:3px;opacity:0;
 color:#fff;text-align:center;text-decoration:none;text-transform:none;text-shadow:none;white-space: normal;
-transition:none;overflow:hidden;cursor:move;
+overflow:hidden;cursor:move;
 -webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;-o-user-select:none;user-select:none;
+transition:none;
+transform:translate3d(0,0,0);
+
 }
 
 .btn-word{padding:$space-half $space-2;background-color:$green;border-radius:3px;border:1px solid transparent;border-top-color:rgba(255,255,255,0.2);border-bottom-color:rgba(0,0,0,0.2);
-font:400 $size-2/1.1875 Bariol,Palatino,"Palatino Linotype","URW Palladio L","Droid Serif",serif;}
+font:200 22px/1 Gill Sans, sans-serif;}
 .btn-outer:hover{opacity:1;}
 
 .clones{position:absolute;left:0;top:0;z-index:1}
 .clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
 
 
-.wrapper-back{position:absolute;z-index:0;left:0;top:50%;right:0;height:0;background:$green-light;content:"";border-top:1px solid rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.15);
+.wrapper-back{position:absolute;z-index:0;left:0;top:0;right:0;height:0;background:$green-light;border-width:1px 0;border-top-color:rgba(0,0,0,0.3);border-bottom-color:rgba(255,255,255,0.15);
 transform:scaleY(0);
-transition:none;
 }
 
 .section-orange .wrapper-back{background-color:$orange-light;}
@@ -84,21 +90,23 @@ transition:none;
 .section-red .wrapper-back{background-color:$red;}
 .section-red .btn-word{background-color:$red;}
 
+.translation{position:absolute;bottom:(-$space);left:0;right:0;top:100%;padding:$space;margin:0;font-style:italic;transition:none;text-align:center}
+.translation span{display:inline-block;opacity:0;}
 
 
 .wrapper-next-arr{position:absolute;bottom:$space-4;left:0;right:0;}
-.next-arr{display:block;width:100px;height:100px;margin:0 auto;border-radius:50% !important;border:none;background:$green-light;
+.next-arr{display:block;width:100px;height:100px;margin:0 auto;border-radius:50% !important;border-width:1px 0;border-bottom-color:rgba(255,255,255,0.15);border-top-color:rgba(0,0,0,0.3);background:$green-light;color:$white;font-size:22px;line-height:1;
 transform:scale(0);
-transition:none;
 }
 
-
-
-.translation{position:absolute;bottom:(-$space);left:0;right:0;padding:$space;margin:0;font-style:italic;transition:none;text-align:center}
-.translation span{display:inline-block;opacity:0;}
 
 
 .app-footer{position:absolute;bottom:0;left:0;right:0;}
 
 .btn-translate{display:inline-block;border:1px solid #60b3b3;background:transparent;color:#60B3B3;}
 .btn-translate:hover,.btn-translate:focus{border-color:#fff;color:#fff}
+
+
+
+// Helpers
+.velocity-animating{transition:none}

@@ -1,5 +1,10 @@
 @import "partials/base";
 
+/* additional vars */
+$green-half-light:   #439c9c;
+$orange-half-light:  #eb8a5a;
+$red-half-light:     #ea5441;
+
 @font-face {
 font-family:'bariol_lightlight';
 src:url('http://setninger.com/f/bariol_light-webfont.eot');
@@ -58,7 +63,7 @@ p{font-size:22px}
 
 /* Sentence */
 
-.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;padding:$space-4 $space $space-6;font-size:0;}
+.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;padding:$space-4 $space $space-8;font-size:0;}
 .items-block:before{content: '';display:inline-block;height:100%;vertical-align:middle;}
 
 .items{display:inline-block;width:100%;vertical-align:middle;}
@@ -80,33 +85,43 @@ font:200 22px/1 Gill Sans, sans-serif;}
 .clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
 
 
-.wrapper-back{position:absolute;z-index:0;left:0;top:0;right:0;height:0;background:$green-light;border-width:1px 0;border-top-color:rgba(0,0,0,0.3);border-bottom-color:rgba(255,255,255,0.15);
+.wrapper-back{position:absolute;z-index:0;left:0;top:0;right:0;height:0;background:$green-light;border-width:1px 0;border-style:solid;border-top-color:rgba(0,0,0,0.3);border-bottom-color:rgba(255,255,255,0.15);
 transform:scaleY(0);
 }
 
+.items-off .btn-word{background:$green-half-light;border-color:transparent}
+
 .section-orange .wrapper-back{background-color:$orange-light;}
 .section-orange .btn-word{background-color:$orange;}
+.section-orange .items-off .btn-word{background:$orange-half-light}
 
 .section-red .wrapper-back{background-color:$red;}
 .section-red .btn-word{background-color:$red;}
+.section-red .items-off .btn-word{background:$red-half-light}
+
 
 .translation{position:absolute;bottom:(-$space);left:0;right:0;top:100%;padding:$space;margin:0;font-style:italic;transition:none;text-align:center}
 .translation span{display:inline-block;opacity:0;}
 
 
-.wrapper-next-arr{position:absolute;bottom:$space-4;left:0;right:0;}
-.next-arr{display:block;width:100px;height:100px;margin:0 auto;border-radius:50% !important;border-width:1px 0;border-bottom-color:rgba(255,255,255,0.15);border-top-color:rgba(0,0,0,0.3);background:$green-light;color:$white;font-size:22px;line-height:1;
+.wrapper-next-arr{position:absolute;bottom:$space-6;left:0;right:0;}
+.next-arr{display:block;width:100px;height:100px;margin:0 auto;border-radius:50% !important;border-width:1px 0;border-bottom-color:rgba(255,255,255,0.2);border-top-color:rgba(0,0,0,0.3);background:$green-light;color:$white;font-size:22px;line-height:1;font-weight:200;
 transform:scale(0);
 }
 
 
 
-.app-footer{position:absolute;bottom:0;left:0;right:0;}
+.app-footer{position:absolute;bottom:0;left:0;right:0;border-top:1px solid transparent;background-color:transparent;
+transition:all 400ms cubic-bezier(0.645, 0.045, 0.355, 1) 0s;}
+.app-footer-full{border-color:rgba(255,255,255,0.15);background-color:$green-hover;}
+.section-footer{padding-top:0;padding-bottom:0;}
 
-.btn-translate{display:inline-block;border:1px solid #60b3b3;background:transparent;color:#60B3B3;}
-.btn-translate:hover,.btn-translate:focus{border-color:#fff;color:#fff}
+.btn-footer{padding:$space $space-2;margin:0;border:0;background:transparent;font:200 16px/1 'Gill Sans', sans-serif;color:#fff}
 
+.btn-translate{display:inline-block;}
+.btn-back{float:left;}
+.btn-shop{float:right;}
 
 
 // Helpers
-.velocity-animating{transition:none}
+.velocity-animating{transition:none;}

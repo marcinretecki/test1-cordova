@@ -42,16 +42,20 @@ function Sentence() {
 
     // here are stored all strange things
     this.store = {
-        content:            document.getElementById('content'), // main div
+        content:    document.getElementById('content'),         // main div NODE
+        footer:     document.getElementById('wrapper-buttons'), // footer NODE
         contentPosition:    null,                               // position of main div
-        sentence:           null,                               // whole sentence object
-        words:              [],                                 // words for reference
-        clones:             [],                                 // clones for reference
-        wordPositions:      [],                                 // positions for reference
-        wrapper:            null,                               // wrapper for reference
-        wrapperBack:        null,                               // wrapperBack for referance
+        sentence:           null,                               // whole sentence OBJECT
+        words:              [],                                 // words ARRAY
+        clones:             [],                                 // clones ARRAY
+        wordPositions:      [],                                 // positions ARRAY
+        itemsOnBoard:       null,                               // items-on-board NODE
+        wrapper:            null,                               // wrapper NODE
+        wrapperBack:        null,                               // wrapperBack NODE
         wrapperBackHeight:  0,                                  // wrapperBack height
         wrapperBackTop:     0,                                  // wrapperBack top
+        nextArr:            null,                               // nextArr NODE
+        translationSpans:   null,                               // translation spans NODEs
     };
 
     // often used contants
@@ -64,7 +68,9 @@ function Sentence() {
     // Is the user working on a sentence or not?
     this.state = {
         rolling: false,
-        transIn: false
+        transIn: false,
+        no:      0,
+        level:   ''
     };
 
 }
@@ -72,6 +78,345 @@ function Sentence() {
 Sentence.prototype = {
 
     constructor: Sentence,
+
+    /**
+     *  TOC
+     *
+     *  - sequencing
+     *  - creation
+     *  - removal
+     *  - animation
+     *  - helpers
+     */
+
+
+    /**
+     *  SEQUENCING
+     */
+
+    newSentence: function() {
+        this._removeHome();                     // remove the menu
+        this._createSentence();                 // create the words
+        this._createFooter();                   // create footer
+        this._createClones();                   // clone the words
+        this._createWrapperBack();              // create the background
+        this._createTranslation();              // create translation
+        this._newSortable();                    // init. Sortable
+        this._comeIn();                         // let the sentence in
+        this._watchResize(true);                // watch browser changes
+
+        this.state.rolling = true;              // the user is on the sentence
+        this._saveState();                      // save state in localStorage
+    },
+
+    _finishedSentence: function() {
+        this._destroySortable();
+        this.showTrans();
+        this._itemsOff();
+        this._showNextArr();
+    },
+
+    nextSentence: function() {
+        this.state.no += 1;
+
+        this._comeOut();                        // animate sentence, arrow-next, translation out and destroy them
+        this._cleanStore();                     // clean store
+    },
+
+    backHome: function() {
+
+        this._watchResize(false);               // stop watching browser changes
+
+    },
+
+
+    /**
+     *  CREATION
+     */
+
+    _createSentence: function() {
+        this._getSentence();
+
+        var that = this,
+            sentence = this.store.sentence, // sentence object
+            s = sentence['s'],              // array of good answers
+            b = sentence['b'];              // string - word you can't touch
+
+        if (b === undefined) {          // if there are no restricted word
+            b = false;
+        }
+
+        var content = this.store.content,
+            // New nodes
+            itemsOnBoard = document.createElement('div'),
+            wrapper = document.createElement('div'),
+            word = document.createElement('div'),
+            wordInner = document.createElement('div'),
+            spill, clone, items, wordsCount, spillCount;
+
+        spill = s[0].concat();      // copy the first correct answer
+
+        // Prepare nodes
+        itemsOnBoard.id = 'items';
+        itemsOnBoard.className = 'items items-on-board';
+        wrapper.id = 'wrapper-items';
+        word.className = 'btn-outer';
+        wordInner.className = "btn-word";
+
+        word.appendChild(wordInner);        // append inside the word
+
+        // sort words randomly
+        spill = spill.sort(function() { return 0.5 - Math.random(); });
+
+        // Check if spill is not the same as correct answers
+
+        ///////////////
+        // TO NIE DZIAŁA........
+        //////////////
+
+        function checkSpill(spill) {
+            var result = s.forEach(function(item, index, array) {
+                if (spill === item) {
+                    return false;
+                }
+            });
+        }
+
+        // sort once again while spill and answer are the same
+        while (checkSpill(spill)) {
+            spill = spill.sort(function() { return 0.5 - Math.random(); });
+        }
+
+        // Append words into the wrapper
+        for (var i=0, len=spill.length; i < len; i++) {
+            clone = word.cloneNode(true);
+            clone.dataset.pos = i + 1;
+            clone.firstChild.innerHTML = spill[i];
+            wrapper.appendChild(clone);
+
+            // store words
+            wordsCount = this.store.words.push(clone);
+        }
+
+        this.store.wrapper = wrapper;                   // store wrapper
+        this.store.itemsOnBoard = itemsOnBoard;         // store items-on-board
+
+        itemsOnBoard.appendChild(wrapper);                      // append wrapper
+        content.insertBefore(itemsOnBoard, content.firstChild); // append items-on-board
+    },
+
+    _createClones: function() {
+        var that = this,
+            wrapper = this.store.wrapper,
+            contentPosition = this.store.contentPosition,
+            words = this.store.words,
+            x = this.opts.valueX,
+            wordPositions = [],
+            storedClones = [],
+            countStoredClones, countWordPositions, word, wordPosition, clone,
+
+            // new node
+            clones = document.createElement('div');
+
+        // prepare new node
+        clones.className = 'clones';
+
+        // for each word, store its position and create a clone
+        (function() {
+            for (var i=0, len=words.length; i < len; i++) {
+                word = words[i];
+                wordPosition = word.getBoundingClientRect();
+                wordPositions[i] = {
+                    left: wordPosition.left - contentPosition.left,
+                    top: wordPosition.top - contentPosition.top,
+                    bottom: wordPosition.bottom,
+                };
+
+                countWordPositions = that.store.wordPositions.push(wordPositions);    // pre-store positions
+
+                clone = word.cloneNode(true);
+                clone.className = clone.className + " clone";
+
+                Velocity.hook(clone, "translateX", Math.round(wordPositions[i].left) + x + "px");
+                Velocity.hook(clone, "translateY", wordPositions[i].top + "px");
+                //Velocity.hook(clone, "left", wordPositions[i].left + x + "px");
+                //Velocity.hook(clone, "top", wordPositions[i].top + "px");
+
+                clones.appendChild(clone);                          // append clone
+                countStoredClones = storedClones.push(clone);       // pre-store clones
+            }
+        })();
+
+        this.store.clones = storedClones;               // store clones
+        this.store.wordPositions = wordPositions;       // store positions
+
+        wrapper.parentNode.appendChild(clones);         // append clones
+
+
+    },
+
+    _createWrapperBack: function() {
+        this._checkBackSize();
+        var that = this,
+            wrapper = this.store.wrapper,
+            wrapperBackHeight = this.store.wrapperBackHeight,
+            wrapperBackTop = this.store.wrapperBackTop,
+
+            // new node
+            wrapperBack = document.createElement('div');
+
+        // prepare new node
+        wrapperBack.className = 'wrapper-back';
+
+        wrapperBack.style.height = wrapperBackHeight + "px";
+        wrapperBack.style.top = wrapperBackTop + "px";
+        Velocity.hook(wrapperBack, 'scaleY', 0);
+
+        this.store.wrapperBack = wrapperBack;           // store background
+        wrapper.parentNode.appendChild(wrapperBack);    // append background
+
+        // animate background
+        Velocity(wrapperBack, { scaleY: [1, 0] }, {duration: 300, easing: that.opts.easing, queue: false});
+    },
+
+    _createTranslation: function() {
+        var that = this,
+            wrapperBack = this.store.wrapperBack,
+            sentence = this.store.sentence,
+            t = sentence['t'], // string - translation
+            translation = document.createElement('p'),
+            span;
+
+        // Append spans in translation
+        tSplited = t.split(" ");
+        for (var i=0, len=tSplited.length; i < len; i++) {
+            span = document.createElement("span");
+            span.appendChild( document.createTextNode(tSplited[i]) );
+            translation.appendChild( span );
+            if (i < len - 1) {
+                translation.appendChild( document.createTextNode(" ") );
+            }
+        }
+        translation.id = 'translation';
+        translation.className = 'translation';
+
+        wrapperBack.appendChild(translation);
+    },
+
+    _createFooter: function() {
+        var that = this,
+            footer = this.store.footer,
+            fragment = document.createDocumentFragment();
+            footerTips = document.createElement('button'),
+            footerBack = document.createElement('button'),
+            footerShop = footer.querySelector('.btn-shop');
+
+        footerTips.className = 'btn-footer btn-translate';
+        footerTips.appendChild( document.createTextNode('? Tips') );
+        footerTips.type = 'button';
+
+        footerBack.className = 'btn-footer btn-back';
+        footerBack.appendChild( document.createTextNode('= Back') );
+        footerBack.type = 'button';
+
+        footerTips.addEventListener('click', function _tips() {
+            that.showTrans();
+            footerTips.removeEventListener('click', _tips, false);
+        }, false);
+
+        footerBack.addEventListener('click', function _back() {
+            that.backhome();
+            footerBack.removeEventListener('click', _back, false);
+        }, false);
+
+        footerShop.addEventListener('click', function _shop() {
+            that._resetState();
+            footerShop.removeEventListener('click', _shop, false);
+        }, false);
+
+        fragment.appendChild(footerBack);
+        fragment.appendChild(footerTips);
+
+        footer.appendChild(fragment);
+
+        footer.parentNode.className += ' app-footer-full';
+    },
+
+    _newSortable: function() {
+        var that = this,
+            wrapper = this.store.wrapper,
+            sortable;
+
+        if (wrapper) {
+            sortable = new Sortable(wrapper, {
+                animation: 0,
+                onStart: function (evt) {                   // dragging started
+                    that._toggleOpacity(evt.item, "0.5");
+                },
+                onEnd: function (evt) {                     // dragging ended
+                    that._toggleOpacity(evt.item, "1");
+                    that._checkSentence();
+                },
+            });
+            this.store.sortable = sortable;
+        }
+    },
+
+
+    /**
+     *  REMOVAL
+     */
+
+    _removeHome: function() {
+        try {
+            var content = this.store.content,
+                menu = document.getElementById('menu-home'),
+                menuCopy = menu.cloneNode(true),
+                replacedMenu = content.replaceChild(menuCopy, menu),
+                removedMenu = content.removeChild(menuCopy);
+                replacedMenu =
+                removedMenu = null;
+        } catch (ex) {}
+    },
+
+    _removeFooter: function() {     // this whole thing is in flux
+        //var that = this,
+        //    content = this.store.content,
+        //    footer = document.querySelector('.app-footer'),
+        //    translate = document.getElementById('translate');
+
+        //Velocity( translate, {opacity: 0, translateY: '1rem'}, {duration: that.opts.duration, easing: that.opts.easing, visibility: 'hidden',
+        //    complete: function() {
+        //        that._destroy(footer);
+        //    }
+        //} );
+    },
+
+    _removeSentence: function() {
+        if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
+
+        var itemsOnBoard = this.store.itemsOnBoard,
+            wrapperBack = this.store.wrapperBack,
+            nextArr = this.store.nextArr;
+
+        this._destroy(itemsOnBoard.firstChild);     // destroy words
+        this._destroy(itemsOnBoard.firstChild);     // destroy clones
+        this._destroy(wrapperBack.firstChild);      // destroy translation
+        this._destroy(itemsOnBoard.lastChild);      // destroy next-arrow
+    },
+
+    _destroySortable: function() {
+        if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
+
+        var sortable = this.store.sortable;
+        sortable.destroy();
+        this.store.sortable = null;
+    },
+
+
+    /**
+     *  ANIMATION
+     */
 
     homeIn: function() {
         var that = this,
@@ -122,19 +467,18 @@ Sentence.prototype = {
     homeOut: function(level) {
         var that = this,
             menuItems = document.querySelectorAll('.btn-menu'),
-            menuItem,
-            no;
+            menuItem;
 
-        // change color
-        this._changeColor(level);
+        this._changeColor(level);       // change color
+        this.state.level = level;       // store level state
 
         for (var i=0, len=menuItems.length; i < len; i++) {
             menuItem = menuItems[i];
             Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: 400, easing: that.opts.easing, delay: i*100,
                 complete: function(elements) {
                     elements.forEach( function(item, index, array) {
-                        if ( item === menuItems[menuItems.length - 1] ) {
-                            that.newSentence(level, no);
+                        if ( item === menuItems[len - 1] ) {
+                            that.newSentence();
                         }
                     } );
                 }
@@ -143,44 +487,9 @@ Sentence.prototype = {
         }
     },
 
-    newSentence: function(level, no) {
-        this._removeHome();                     // remove the menu
-        this._createSentence(level, no);        // create the words
-        this._createFooter();                   // create footer
-        this._createClones();                   // clone the words
-        this._createWrapperBack();              // create the background
-        this._createTranslation(level, no);     // create translation
-        this._newSortable();                    // init. Sortable
-        this._comeIn();                         // let the sentence in
-        this._watchResize(true);                // watch browser changes
-        this.state.rolling = true;              // the user is on the sentence
-    },
-
-    // we need a way to determine sentence number
-
-
-    // remove creating new nodes from this function and move to seperate
-    // comeIn should only change view, not create anythin
-
-    _comeIn: function() {
-        var that = this,
-            contentPosition = this.store.contentPosition,
-            wordPositions = this.store.wordPositions,
-            clones = this.store.clones,
-            x = this.opts.valueX,
-            left;
-
-        (function() {
-            for (var i=0, len=clones.length; i < len; i++) {
-                left = Math.round( wordPositions[i].left );
-                Velocity(
-                    clones[i],
-                    { opacity: 1, translateX: [left, left + x]},
-                    { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 + 200, queue: false }
-                );
-            }
-        })();
-    },
+    //
+    // czy możemy połączyć {_comeIn()} tak, żeby to {animate()} robiło animację????
+    //
 
     animate: function() {
         var that = this,
@@ -247,132 +556,179 @@ Sentence.prototype = {
 
     showTrans: function() {
         if (this.state.transIn) { return; }
+        if (!this.state.rolling) { return; }
 
         var that = this,
-            translation = document.querySelector(".translation"),
+            content = this.store.content,
+            translation = content.querySelector(".translation"),
             spans = translation.querySelectorAll("span"),
+            footer = this.store.footer,
+            translate = footer.querySelector('.btn-translate'),
             span;
+
+        this.store.translationSpans = spans;       // store translation, it will be used in nextSentence
 
         for (var i=0, len=spans.length; i < len; i++) {
             span = spans[i];
             Velocity( span, { opacity: [1, 0],  translateX: [0, '200px'] }, { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 } );
         }
 
-        this._removeFooter();
+        Velocity( translate, { opacity: [0, 1],  }, { duration: that.opts.duration, easing: that.opts.easing, visibility: "hidden" } );
+
         this.state.transIn = true;
     },
 
-    nextSentence: function() {
-        console.log('next sentence');
+    _comeIn: function() {
+        var that = this,
+            contentPosition = this.store.contentPosition,
+            wordPositions = this.store.wordPositions,
+            clones = this.store.clones,
+            x = this.opts.valueX,
+            left;
+
+        (function() {
+            for (var i=0, len=clones.length; i < len; i++) {
+                left = Math.round( wordPositions[i].left );
+                Velocity(
+                    clones[i],
+                    { opacity: 1, translateX: [left, left + x]},
+                    { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 + 200, queue: false }
+                );
+            }
+        })();
     },
 
-    _showNextArr: function() {
-        try {
-            var that = this,
-                nextArrWrap = document.createElement('div'),
-                nextArr = document.createElement('button'),
-                itemsOnBoard = this.store.itemsOnBoard;
-
-            // prepare new node
-            nextArrWrap.className = 'wrapper-next-arr';
-            nextArr.className = 'next-arr';
-            nextArr.id = 'next-arr';
-            nextArr.type = 'button';
-            nextArr.innerHTML = '&raquo';
-
-            nextArr.addEventListener('click', function _fu() {
-                that.nextSentence();
-                nextArr.removeEventListener('click', _fu, false);
-            }, false);
-
-            nextArrWrap.appendChild(nextArr);               // append into arrow wrapper
-            itemsOnBoard.appendChild(nextArrWrap);          // append into items-on-board
-
-            Velocity(nextArr, {scale: [1, 0]}, { duration: 400, easing: that.opts.easing, delay: 200});
-
-        } catch(ex){}
-    },
-
-
-
-    _createSentence: function(level, no) {
-        // maybe this logic should be inside _getSentence, while this method should only show the process?
-
-        var no = 0; // for now, before we determine sentence no
-
-        this._getSentence(level, no);
+    _comeOut: function() {
+        if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
 
         var that = this,
-            sentence = this.store.sentence, // sentence object
-            s = sentence['s'],              // array of good answers
-            b = sentence['b'];              // string - word you can't touch
+            wordPositions = this.store.wordPositions,
+            clones = this.store.clones,
+            nextArr = this.store.nextArr,
+            translationSpans = this.store.translationSpans,
+            x = this.opts.valueX,
+            actualWords = this.store.wrapper.childNodes,
+            span, left, position, removeSentence;
 
-        if (b === undefined) {          // if there are no restricted word
-            b = false;
-        }
+        (function() {
+            for (var i=0, len=translationSpans.length; i < len; i++) {
+                span = translationSpans[i];
+                Velocity( span, { opacity: [0, 1],  translateX: ['-200px', 0] }, { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 } );
+            }
+        })();
 
-        var content = this.store.content,
-            // New nodes
-            itemsOnBoard = document.createElement('div'),
-            wrapper = document.createElement('div'),
-            word = document.createElement('div'),
-            wordInner = document.createElement('div'),
-            spill, clone, items, wordsCount, spillCount;
+        removeSentence = this._debounce(function() {
+            that._removeSentence();
+        }, 300);
 
-        spill = s[0].concat();      // copy the first correct answer
+        (function() {
+            for (var i=0, len=actualWords.length; i < len; i++) {
+                position = actualWords[i].dataset.pos - 1;
+                left = Math.round( wordPositions[position].left );
+                Velocity(
+                    clones[position],
+                    { opacity: 1, translateX: [left - x, left]},
+                    { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 + 200, queue: false,
+                        complete: function(elements) {
+                            elements.forEach( function(item, index, array) {
+                                if ( item === clones[len - 1] ) {
+                                    removeSentence();
+                                }
+                            } );
+                        }
+                    }
+                );
+            }
+        })();
 
-        // Prepare nodes
-        itemsOnBoard.id = 'items';
-        itemsOnBoard.className = 'items items-on-board';
-        wrapper.id = 'wrapper-items';
-        word.className = 'btn-outer';
-        wordInner.className = "btn-word";
-
-        word.appendChild(wordInner);        // append inside the word
-
-        // sort words randomly
-        spill = spill.sort(function() { return 0.5 - Math.random(); });
-
-        // Check if spill is not the same as correct answers
-
-        ///////////////
-        // TO NIE DZIAŁA........
-        //////////////
-
-        function checkSpill(spill) {
-            var result = s.forEach(function(item, index, array) {
-                if (spill === item) {
-                    return false;
-                }
-            });
-        }
-
-        // sort once again while spill and answer are the same
-        while (checkSpill(spill)) {
-            spill = spill.sort(function() { return 0.5 - Math.random(); });
-        }
-
-        // Append words into the wrapper
-        for (var i=0, len=spill.length; i < len; i++) {
-            clone = word.cloneNode(true);
-            clone.dataset.pos = i + 1;
-            clone.firstChild.innerHTML = spill[i];
-            wrapper.appendChild(clone);
-
-            // store words
-            wordsCount = this.store.words.push(clone);
-        }
-
-        this.store.wrapper = wrapper;                   // store wrapper
-        this.store.itemsOnBoard = itemsOnBoard;         // store items-on-board
-
-
-        itemsOnBoard.appendChild(wrapper);              // append wrapper
-        content.appendChild(itemsOnBoard);              // append items-on-board
-
+        Velocity(nextArr, { scale: [0, 1] }, { duration: that.opts.duration*2, easing: that.opts.easing });
     },
 
-    _checkSentence: function() {        // check if sentence is finished
+
+
+    _showNextArr: function() {
+        if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
+
+        var that = this,
+            itemsOnBoard = this.store.itemsOnBoard,
+            nextArrWrap = document.createElement('div'),
+            nextArr = document.createElement('button');
+
+        // prepare new nodes
+        nextArrWrap.className = 'wrapper-next-arr';
+        nextArr.className = 'next-arr';
+        nextArr.id = 'next-arr';
+        nextArr.type = 'button';
+        nextArr.innerHTML = '&raquo';
+
+        this.store.nextArr = nextArr;       // store nextArr for referance
+
+        nextArr.addEventListener('click', function _fu() {
+            that.nextSentence();
+            nextArr.removeEventListener('click', _fu, false);
+        }, false);
+
+        nextArrWrap.appendChild(nextArr);               // append into arrow wrapper
+        itemsOnBoard.appendChild(nextArrWrap);          // append into items-on-board
+
+        Velocity(nextArr, {scale: [1, 0]}, { duration: that.opts.duration*2, easing: that.opts.easing, delay: 200});
+    },
+
+    _changeColor: function(level) {
+        try {
+            var section = document.getElementById('section'),
+                sectionClass = ' section-100';
+
+            switch (level) {
+                case 'a':    section.className = 'section-green' + sectionClass; break;
+                case 'b':    section.className = 'section-orange' + sectionClass; break;
+                case 'c':    section.className = 'section-red' + sectionClass; break;
+                case 'menu': section.className = 'section-dark' + sectionClass; break;
+            }
+
+        } catch (ex){};
+    },
+
+    _toggleOpacity: function(el, op) {
+        try {
+            var pos = el.dataset.pos - 1,
+                clone = this.store.clones[pos];
+            Velocity.hook(clone, "opacity", op);
+        } catch (ex){};
+    },
+
+    _itemsOff: function() {
+        var itemsOnBoard = this.store.itemsOnBoard;
+
+        itemsOnBoard.className = itemsOnBoard.className + " items-off";
+    },
+
+
+    /**
+     *  HELPERS
+     */
+
+    _getSentence: function() {
+        try {
+            var no = this.state.no,
+                level = this.state.level,
+                sentence;
+
+            switch (level) {
+                case 'a': sentence = arrayA(no); break;
+                case 'b': sentence = arrayB(no); break;
+                case 'c': sentence = arrayC(no); break;
+            }
+            return this.store.sentence = sentence;  // store sentence
+        } catch (ex){};
+    },
+
+    _getLevels: function() {
+        // some way of geting percent of levels done to show on home
+    },
+
+    // tu trzeba usunąć debounce (przenieść tak, gdzie ta funkcja jest called)
+    _checkSentence: function() {        // check if sentence is correct
         var that = this,
             sentence = this.store.sentence,
             wrapper = this.store.wrapper,
@@ -410,216 +766,6 @@ Sentence.prototype = {
         }, 200);
 
         checkSentence();
-
-    },
-
-    _finishedSentence: function() {
-        this._destroySortable();
-        this.showTrans();
-        this._showNextArr();
-    },
-
-    _createClones: function() {
-        var that = this,
-            wrapper = this.store.wrapper,
-            contentPosition = this.store.contentPosition,
-            words = this.store.words,
-            x = this.opts.valueX,
-            wordPositions = [],
-            storedClones = [],
-            countStoredClones, countWordPositions, word, wordPosition, clone,
-
-            // new node
-            clones = document.createElement('div');
-
-        // prepare new node
-        clones.className = 'clones';
-
-        // for each word, store its position and create a clone
-        (function() {
-            for (var i=0, len=words.length; i < len; i++) {
-                word = words[i];
-                wordPosition = word.getBoundingClientRect();
-                wordPositions[i] = {
-                    left: wordPosition.left - contentPosition.left,
-                    top: wordPosition.top - contentPosition.top,
-                    bottom: wordPosition.bottom,
-                };
-
-                countWordPositions = that.store.wordPositions.push(wordPositions);    // pre-store positions
-
-                clone = word.cloneNode(true);
-                clone.className = clone.className + " clone";
-
-                Velocity.hook(clone, "translateX", Math.round(wordPositions[i].left) + x + "px");
-                Velocity.hook(clone, "translateY", wordPositions[i].top + "px");
-                //Velocity.hook(clone, "left", wordPositions[i].left + x + "px");
-                //Velocity.hook(clone, "top", wordPositions[i].top + "px");
-
-                clones.appendChild(clone);                          // append clone
-                countStoredClones = storedClones.push(clone);       // pre-store clones
-            }
-        })();
-
-        this.store.clones = storedClones;               // store clones
-        this.store.wordPositions = wordPositions;     // store positions
-
-        wrapper.parentNode.appendChild(clones);         // append clones
-
-
-    },
-
-    _createWrapperBack: function() {
-        this._checkBackSize();
-        var that = this,
-            wrapper = this.store.wrapper,
-            wrapperBackHeight = this.store.wrapperBackHeight,
-            wrapperBackTop = this.store.wrapperBackTop,
-
-            // new node
-            wrapperBack = document.createElement('div');
-
-        // prepare new node
-        wrapperBack.className = 'wrapper-back';
-
-        wrapperBack.style.height = wrapperBackHeight + "px";
-        wrapperBack.style.top = wrapperBackTop + "px";
-        Velocity.hook(wrapperBack, 'scaleY', 0);
-
-        this.store.wrapperBack = wrapperBack;           // store background
-        wrapper.parentNode.appendChild(wrapperBack);    // append background
-
-        // animate background
-        Velocity(wrapperBack, { scaleY: [1, 0] }, {duration: 300, easing: that.opts.easing, queue: false});
-    },
-
-    _createTranslation: function() {
-        var that = this,
-            wrapperBack = this.store.wrapperBack,
-            sentence = this.store.sentence,
-            t = sentence['t'], // string - translation
-            translation = document.createElement('p'),
-            span;
-
-        // Append spans in translation
-        tSplited = t.split(" ");
-        for (var i=0, len=tSplited.length; i < len; i++) {
-            span = document.createElement("span");
-            span.appendChild( document.createTextNode(tSplited[i]) );
-            translation.appendChild( span );
-            if (i < len - 1) {
-                translation.appendChild( document.createTextNode(" ") );
-            }
-        }
-        translation.id = 'translation';
-        translation.className = 'translation';
-
-        wrapperBack.appendChild(translation);
-    },
-
-    _createFooter: function() {
-        var that = this,
-            content = this.store.content,
-            footer = document.createElement('footer'),
-            footerWrapper = document.createElement('div'),
-            footerTips = document.createElement('button');
-
-        footer.className = 'app-footer';
-        footerWrapper.className = 'section-content section-1-1 group centered';
-        footerWrapper.id = 'wrapper-buttons';
-        footerTips.className = 'btn btn-translate';
-        footerTips.appendChild( document.createTextNode('Tips') );
-        footerTips.id = 'translate';
-        footerTips.type = 'button';
-
-        footerTips.addEventListener('click', function _fu() {
-            that.showTrans();
-            footerTips.removeEventListener('click', _fu, false);
-        }, false);
-
-        footerWrapper.appendChild(footerTips);
-        footer.appendChild(footerWrapper);
-
-        content.appendChild(footer);
-    },
-
-    _removeFooter: function() {
-        var that = this,
-            content = this.store.content,
-            footer = document.querySelector('.app-footer'),
-            translate = document.getElementById('translate');
-
-        Velocity( translate, {opacity: 0, translateY: '1rem'}, {duration: that.opts.duration, easing: that.opts.easing, visibility: 'hidden',
-            complete: function() {
-                var removedFooter = content.removeChild(footer);
-                removedFooter = null;
-            }
-        } );
-    },
-
-    _removeHome: function() {
-        try {
-            var content = this.store.content,
-                menu = document.getElementById('menu-home'),
-                menuCopy = menu.cloneNode(true),
-                replacedMenu = content.replaceChild(menuCopy, menu),
-                removedMenu = content.removeChild(menuCopy);
-                replacedMenu =
-                removedMenu = null;
-        } catch (ex) {
-            // if there is noe menu, do nothing
-        }
-    },
-
-    _getSentence: function(level, no) {
-        var sentence;
-
-        if (level === 'a') {
-            sentence = arrayA(no);
-        } else if (level === 'b') {
-            sentence = arrayB(no);
-        } else if (level === 'c') {
-            sentence = arrayC(no);
-        } else {
-            console.log('level not provided');
-        }
-
-        return this.store.sentence = sentence;
-    },
-
-    _getLevels: function() {
-        // some way of geting percent of levels done to show on home
-    },
-
-    _changeColor: function(level) {
-        try {
-            var section = document.getElementById('section'),
-                sectionClass = ' section-100';
-
-            switch (level) {
-                case 'a':
-                    section.className = 'section-green' + sectionClass;
-                    break;
-                case 'b':
-                    section.className = 'section-orange' + sectionClass;
-                    break;
-                case 'c' :
-                    section.className = 'section-red' + sectionClass;
-                    break;
-                case 'menu':
-                    section.className = 'section-dark' + sectionClass;
-                    break;
-            }
-
-        } catch (ex){};
-    },
-
-    _toggleOpacity: function(el, op) {
-        try {
-            var pos = el.dataset.pos - 1,
-                clone = this.store.clones[pos];
-            Velocity.hook(clone, "opacity", op);
-        } catch (ex){};
     },
 
     _checkBackSize: function() {
@@ -635,7 +781,6 @@ Sentence.prototype = {
             for (var i=0, len=wordPositions.length; i < len; i++) {
                 top = Math.round( wordPositions[i].top );
                 bottom = Math.round( wordPositions[i].bottom );
-
                 wordTops.push(top);
                 wordBottoms.push(bottom);
             }
@@ -655,38 +800,6 @@ Sentence.prototype = {
         } catch(ex) {};
     },
 
-    _newSortable: function() {
-        var wrapper = this.store.wrapper,
-            that = this,
-            sortable;
-
-        if (wrapper) {
-            sortable = new Sortable(wrapper, {
-                animation: 0,
-
-                // dragging started
-                onStart: function (evt) {
-                    that._toggleOpacity(evt.item, "0.5");
-                },
-
-                // dragging ended
-                onEnd: function (evt) {
-                    that._toggleOpacity(evt.item, "1");
-
-                    that._checkSentence();
-                },
-            });
-
-            this.store.sortable = sortable;
-        }
-    },
-
-    _destroySortable: function() {
-        var sortable = this.store.sortable;
-        sortable.destroy();
-    },
-
-
     _watchResize: function(state) {
         var resize
             that = this;
@@ -699,6 +812,44 @@ Sentence.prototype = {
         } else {
             resize = that.store.resize;
             window.removeEventListener('resize', resize, false);
+        }
+    },
+
+    _cleanStore: function() {
+        var store = this.store;
+
+        store.sentence =
+        store.nextArr =
+        store.translationSpans = null;
+        store.words =
+        store.clones = [];
+    },
+
+    _saveState: function() {
+        var state = this.state,
+            storage = localStorage;
+
+        storage.setItem('level', state.level);
+        storage.setItem('no', state.no);
+    },
+
+    _loadState: function() {
+        var state = this.state,
+            storage = localStorage;
+
+        if (storage.length > 0) {
+            state.level = storage.getItem('level');
+            state.no = storage.getItem('no');
+            console.log('storage is populated');
+        }
+    },
+
+    _resetState: function() {
+        var state = this.state,
+            storage = localStorage;
+
+        if (storage.length > 0) {
+            storage.clear();
         }
     },
 
@@ -720,6 +871,20 @@ Sentence.prototype = {
             timeout = setTimeout(later, wait);
             if (callNow) func.apply(context, args);
         };
+    },
+
+    _destroy: function(el) {
+        try {
+            var parent = el.parentNode,
+                copy = el.cloneNode(true),
+                replaceEl = parent.replaceChild(copy, el),
+                removeEl = parent.removeChild(copy);
+
+            el =
+            copy =
+            replaceEl =
+            removeEl = null;
+        } catch (ex) {console.log(ex);}
     },
 
 

@@ -137,7 +137,7 @@ Sentence.prototype = {
     _createSentence: function() {
         this._getSentence();
 
-        var that = this,
+        var _this = this,
             sentence = this.store.sentence, // sentence object
             s = sentence['s'],              // array of good answers
             b = sentence['b'];              // string - word you can't touch
@@ -206,7 +206,7 @@ Sentence.prototype = {
     },
 
     _createClones: function() {
-        var that = this,
+        var _this = this,
             wrapper = this.store.wrapper,
             contentPosition = this.store.contentPosition,
             words = this.store.words,
@@ -232,7 +232,7 @@ Sentence.prototype = {
                     bottom: wordPosition.bottom,
                 };
 
-                countWordPositions = that.store.wordPositions.push(wordPositions);    // pre-store positions
+                countWordPositions = _this.store.wordPositions.push(wordPositions);    // pre-store positions
 
                 clone = word.cloneNode(true);
                 clone.className = clone.className + " clone";
@@ -257,7 +257,7 @@ Sentence.prototype = {
 
     _createWrapperBack: function() {
         this._checkBackSize();
-        var that = this,
+        var _this = this,
             wrapper = this.store.wrapper,
             wrapperBackHeight = this.store.wrapperBackHeight,
             wrapperBackTop = this.store.wrapperBackTop,
@@ -276,11 +276,11 @@ Sentence.prototype = {
         wrapper.parentNode.appendChild(wrapperBack);    // append background
 
         // animate background
-        Velocity(wrapperBack, { scaleY: [1, 0] }, {duration: 300, easing: that.opts.easing, queue: false});
+        Velocity(wrapperBack, { scaleY: [1, 0] }, {duration: 300, easing: _this.opts.easing, queue: false});
     },
 
     _createTranslation: function() {
-        var that = this,
+        var _this = this,
             wrapperBack = this.store.wrapperBack,
             sentence = this.store.sentence,
             t = sentence['t'], // string - translation
@@ -304,7 +304,7 @@ Sentence.prototype = {
     },
 
     _createFooter: function() {
-        var that = this,
+        var _this = this,
             footer = this.store.footer,
             fragment = document.createDocumentFragment();
             footerTips = document.createElement('button'),
@@ -320,17 +320,17 @@ Sentence.prototype = {
         footerBack.type = 'button';
 
         footerTips.addEventListener('click', function _tips() {
-            that.showTrans();
+            _this.showTrans();
             footerTips.removeEventListener('click', _tips, false);
         }, false);
 
         footerBack.addEventListener('click', function _back() {
-            that.backhome();
+            _this.backhome();
             footerBack.removeEventListener('click', _back, false);
         }, false);
 
         footerShop.addEventListener('click', function _shop() {
-            that._resetState();
+            _this._resetState();
             footerShop.removeEventListener('click', _shop, false);
         }, false);
 
@@ -343,7 +343,7 @@ Sentence.prototype = {
     },
 
     _newSortable: function() {
-        var that = this,
+        var _this = this,
             wrapper = this.store.wrapper,
             sortable;
 
@@ -351,11 +351,11 @@ Sentence.prototype = {
             sortable = new Sortable(wrapper, {
                 animation: 0,
                 onStart: function (evt) {                   // dragging started
-                    that._toggleOpacity(evt.item, "0.5");
+                    _this._toggleOpacity(evt.item, "0.5");
                 },
                 onEnd: function (evt) {                     // dragging ended
-                    that._toggleOpacity(evt.item, "1");
-                    that._checkSentence();
+                    _this._toggleOpacity(evt.item, "1");
+                    _this._checkSentence();
                 },
             });
             this.store.sortable = sortable;
@@ -380,14 +380,14 @@ Sentence.prototype = {
     },
 
     _removeFooter: function() {     // this whole thing is in flux
-        //var that = this,
+        //var _this = this,
         //    content = this.store.content,
         //    footer = document.querySelector('.app-footer'),
         //    translate = document.getElementById('translate');
 
-        //Velocity( translate, {opacity: 0, translateY: '1rem'}, {duration: that.opts.duration, easing: that.opts.easing, visibility: 'hidden',
+        //Velocity( translate, {opacity: 0, translateY: '1rem'}, {duration: _this.opts.duration, easing: _this.opts.easing, visibility: 'hidden',
         //    complete: function() {
-        //        that._destroy(footer);
+        //        _this._destroy(footer);
         //    }
         //} );
     },
@@ -419,7 +419,7 @@ Sentence.prototype = {
      */
 
     homeIn: function() {
-        var that = this,
+        var _this = this,
             menu = document.createElement('div'),
             menuItemClass = "btn-menu btn-menu-hidden",
             menuItemOne = document.createElement('button'),
@@ -434,19 +434,19 @@ Sentence.prototype = {
         menuItemOne.className = menuItemClass + " btn-menu-1";
         menuItemOne.innerHTML = '<span>Od podstaw</span><div class="percent">87%</div>';
         menuItemOne.addEventListener('click', function() {
-            that.homeOut('a');
+            _this.homeOut('a');
         });
 
         menuItemTwo.className = menuItemClass + " btn-menu-2";
         menuItemTwo.innerHTML = '<span>Średnio-zaawansowane</span><div class="percent">100%</div>';
         menuItemTwo.addEventListener('click', function() {
-            that.homeOut('b');
+            _this.homeOut('b');
         });
 
         menuItemThree.className = menuItemClass + " btn-menu-3";
         menuItemThree.innerHTML = '<span>Zaawansowane</span><div class="percent">5%</div>';
         menuItemThree.addEventListener('click', function() {
-            that.homeOut('c');
+            _this.homeOut('c');
         });
 
         menu.appendChild(menuItemOne);
@@ -460,12 +460,12 @@ Sentence.prototype = {
 
         for (var i=0, len=menuItems.length; i < len; i++) {
             menuItem = menuItems[i];
-            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: 400, easing: that.opts.easing, delay: i*100 } );
+            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: 400, easing: _this.opts.easing, delay: i*100 } );
         }
     },
 
     homeOut: function(level) {
-        var that = this,
+        var _this = this,
             menuItems = document.querySelectorAll('.btn-menu'),
             menuItem;
 
@@ -474,11 +474,11 @@ Sentence.prototype = {
 
         for (var i=0, len=menuItems.length; i < len; i++) {
             menuItem = menuItems[i];
-            Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: 400, easing: that.opts.easing, delay: i*100,
+            Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: 400, easing: _this.opts.easing, delay: i*100,
                 complete: function(elements) {
                     elements.forEach( function(item, index, array) {
                         if ( item === menuItems[len - 1] ) {
-                            that.newSentence();
+                            _this.newSentence();
                         }
                     } );
                 }
@@ -492,7 +492,7 @@ Sentence.prototype = {
     //
 
     animate: function() {
-        var that = this,
+        var _this = this,
             words = this.store.words,
             clones = this.store.clones,
             contentPosition = this.store.contentPosition,
@@ -529,19 +529,19 @@ Sentence.prototype = {
                     translateY: [wordPositionsNew[i].top, wordPositionsOld[i].top],
                     //left: [wordPositionsNew[i].left, wordPositionsOld[i].left],
                     //top: [wordPositionsNew[i].top, wordPositionsOld[i].top],
-                }, { duration: that.opts.duration, easing: that.opts.easing, queue: false,
+                }, { duration: _this.opts.duration, easing: _this.opts.easing, queue: false,
                 });
             }
         }, 10);
         animateClones();
 
         animateWrapperBack = this._debounce(function() {
-            var changedWrapperBack = that._checkBackSize();
+            var changedWrapperBack = _this._checkBackSize();
             if (changedWrapperBack) {
-                var wrapperBackHeight = that.store.wrapperBackHeight;
-                var wrapperBackTop = that.store.wrapperBackTop;
+                var wrapperBackHeight = _this.store.wrapperBackHeight;
+                var wrapperBackTop = _this.store.wrapperBackTop;
 
-                Velocity(wrapperBack, { height: wrapperBackHeight, top: wrapperBackTop }, {duration: 300, easing: that.opts.easing, queue: false});
+                Velocity(wrapperBack, { height: wrapperBackHeight, top: wrapperBackTop }, {duration: 300, easing: _this.opts.easing, queue: false});
             }
         }, 100);
         animateWrapperBack();
@@ -558,7 +558,7 @@ Sentence.prototype = {
         if (this.state.transIn) { return; }
         if (!this.state.rolling) { return; }
 
-        var that = this,
+        var _this = this,
             content = this.store.content,
             translation = content.querySelector(".translation"),
             spans = translation.querySelectorAll("span"),
@@ -570,16 +570,16 @@ Sentence.prototype = {
 
         for (var i=0, len=spans.length; i < len; i++) {
             span = spans[i];
-            Velocity( span, { opacity: [1, 0],  translateX: [0, '200px'] }, { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 } );
+            Velocity( span, { opacity: [1, 0],  translateX: [0, '200px'] }, { duration: _this.opts.duration, easing: _this.opts.easing, delay: i*100 } );
         }
 
-        Velocity( translate, { opacity: [0, 1],  }, { duration: that.opts.duration, easing: that.opts.easing, visibility: "hidden" } );
+        Velocity( translate, { opacity: [0, 1],  }, { duration: _this.opts.duration, easing: _this.opts.easing, visibility: "hidden" } );
 
         this.state.transIn = true;
     },
 
     _comeIn: function() {
-        var that = this,
+        var _this = this,
             contentPosition = this.store.contentPosition,
             wordPositions = this.store.wordPositions,
             clones = this.store.clones,
@@ -592,7 +592,7 @@ Sentence.prototype = {
                 Velocity(
                     clones[i],
                     { opacity: 1, translateX: [left, left + x]},
-                    { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 + 200, queue: false }
+                    { duration: _this.opts.duration, easing: _this.opts.easing, delay: i*100 + 200, queue: false }
                 );
             }
         })();
@@ -601,7 +601,7 @@ Sentence.prototype = {
     _comeOut: function() {
         if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
 
-        var that = this,
+        var _this = this,
             wordPositions = this.store.wordPositions,
             clones = this.store.clones,
             nextArr = this.store.nextArr,
@@ -613,12 +613,12 @@ Sentence.prototype = {
         (function() {
             for (var i=0, len=translationSpans.length; i < len; i++) {
                 span = translationSpans[i];
-                Velocity( span, { opacity: [0, 1],  translateX: ['-200px', 0] }, { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 } );
+                Velocity( span, { opacity: [0, 1],  translateX: ['-200px', 0] }, { duration: _this.opts.duration, easing: _this.opts.easing, delay: i*100 } );
             }
         })();
 
         removeSentence = this._debounce(function() {
-            that._removeSentence();
+            _this._removeSentence();
         }, 300);
 
         (function() {
@@ -628,7 +628,7 @@ Sentence.prototype = {
                 Velocity(
                     clones[position],
                     { opacity: 1, translateX: [left - x, left]},
-                    { duration: that.opts.duration, easing: that.opts.easing, delay: i*100 + 200, queue: false,
+                    { duration: _this.opts.duration, easing: _this.opts.easing, delay: i*100 + 200, queue: false,
                         complete: function(elements) {
                             elements.forEach( function(item, index, array) {
                                 if ( item === clones[len - 1] ) {
@@ -641,7 +641,7 @@ Sentence.prototype = {
             }
         })();
 
-        Velocity(nextArr, { scale: [0, 1] }, { duration: that.opts.duration*2, easing: that.opts.easing });
+        Velocity(nextArr, { scale: [0, 1] }, { duration: _this.opts.duration*2, easing: _this.opts.easing });
     },
 
 
@@ -649,7 +649,7 @@ Sentence.prototype = {
     _showNextArr: function() {
         if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
 
-        var that = this,
+        var _this = this,
             itemsOnBoard = this.store.itemsOnBoard,
             nextArrWrap = document.createElement('div'),
             nextArr = document.createElement('button');
@@ -664,14 +664,14 @@ Sentence.prototype = {
         this.store.nextArr = nextArr;       // store nextArr for referance
 
         nextArr.addEventListener('click', function _fu() {
-            that.nextSentence();
+            _this.nextSentence();
             nextArr.removeEventListener('click', _fu, false);
         }, false);
 
         nextArrWrap.appendChild(nextArr);               // append into arrow wrapper
         itemsOnBoard.appendChild(nextArrWrap);          // append into items-on-board
 
-        Velocity(nextArr, {scale: [1, 0]}, { duration: that.opts.duration*2, easing: that.opts.easing, delay: 200});
+        Velocity(nextArr, {scale: [1, 0]}, { duration: _this.opts.duration*2, easing: _this.opts.easing, delay: 200});
     },
 
     _changeColor: function(level) {
@@ -729,7 +729,7 @@ Sentence.prototype = {
 
     // tu trzeba usunąć debounce (przenieść tak, gdzie ta funkcja jest called)
     _checkSentence: function() {        // check if sentence is correct
-        var that = this,
+        var _this = this,
             sentence = this.store.sentence,
             wrapper = this.store.wrapper,
             wordsOrder = [],
@@ -760,7 +760,7 @@ Sentence.prototype = {
             };
 
             if ( result() ) {
-                that._finishedSentence();       // if the sentence is correct call the end
+                _this._finishedSentence();       // if the sentence is correct call the end
             }
 
         }, 200);
@@ -802,15 +802,15 @@ Sentence.prototype = {
 
     _watchResize: function(state) {
         var resize
-            that = this;
+            _this = this;
         if (state) {
-            resize = that._debounce(function() {
-                that.animate();
+            resize = _this._debounce(function() {
+                _this.animate();
             }, 250);
-            that.store.resize = resize;
+            _this.store.resize = resize;
             window.addEventListener('resize', resize, false);
         } else {
-            resize = that.store.resize;
+            resize = _this.store.resize;
             window.removeEventListener('resize', resize, false);
         }
     },
@@ -854,7 +854,7 @@ Sentence.prototype = {
     },
 
 
-    // Returns a function, that, as long as it continues to be invoked, will not
+    // Returns a function, _this, as long as it continues to be invoked, will not
     // be triggered. The function will be called after it stops being called for
     // N milliseconds. If `immediate` is passed, trigger the function on the
     // leading edge, instead of the trailing.

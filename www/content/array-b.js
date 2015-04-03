@@ -86,5 +86,7 @@ function arrayB(no) {
     }
   ];
 
-  return array[no];
+  if (no >= 0) {
+    return array[no];
+  }
 }

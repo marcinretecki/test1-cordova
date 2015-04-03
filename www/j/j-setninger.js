@@ -33,14 +33,16 @@ What happens when:
 */
 
 /*
-- pamiętaj, żeby wszystkie event listeners przenieść na document itd.... (to ważne)
+    - pamiętaj, żeby wszystkie event listeners przenieść na document itd.... (to ważne)
 */
 
+/*
+    - should we change the store, state and opts into private vars?
+*/
 
 
 function Sentence() {
 
-    // here are stored all strange things
     this.store = {
         content:    document.getElementById('content'),         // main div NODE
         footer:     document.getElementById('wrapper-buttons'), // footer NODE
@@ -58,20 +60,21 @@ function Sentence() {
         translationSpans:   null,                               // translation spans NODEs
     };
 
-    // often used contants
     this.opts = {
         easing:     [0.645,0.045,0.355,1],
         duration:   200,
         valueX:     400
     };
 
-    // Is the user working on a sentence or not?
     this.state = {
-        rolling: false,
         transIn: false,
         no:      0,
-        level:   ''
+        level:   'home'
     };
+
+    // Init
+    this._loadState();
+    this._begin();
 
 }
 
@@ -87,6 +90,7 @@ Sentence.prototype = {
      *  - removal
      *  - animation
      *  - helpers
+     *
      */
 
 
@@ -94,19 +98,32 @@ Sentence.prototype = {
      *  SEQUENCING
      */
 
-    newSentence: function() {
+    _begin: function() {
+        var content = this.store.content;
+
+        this.store.contentPosition = content.getBoundingClientRect();
+
+        if (this.state.level === 'home') {
+            this.homeIn();
+        } else {
+            this._newSentence();
+        }
+
+    },
+
+    _newSentence: function() {
+        this._changeColor();                    // change color
         this._removeHome();                     // remove the menu
-        this._createSentence();                 // create the words
         this._createFooter();                   // create footer
+        this._createSentence();                 // create the words
         this._createClones();                   // clone the words
         this._createWrapperBack();              // create the background
         this._createTranslation();              // create translation
         this._newSortable();                    // init. Sortable
-        this._comeIn();                         // let the sentence in
         this._watchResize(true);                // watch browser changes
-
-        this.state.rolling = true;              // the user is on the sentence
         this._saveState();                      // save state in localStorage
+
+        this._comeIn();                         // let the sentence in
     },
 
     _finishedSentence: function() {
@@ -121,11 +138,16 @@ Sentence.prototype = {
 
         this._comeOut();                        // animate sentence, arrow-next, translation out and destroy them
         this._cleanStore();                     // clean store
+
+        console.log(this.state.no);
     },
 
     backHome: function() {
 
         this._watchResize(false);               // stop watching browser changes
+
+        this.state.level = 'home';
+        this._saveState();
 
     },
 
@@ -137,10 +159,9 @@ Sentence.prototype = {
     _createSentence: function() {
         this._getSentence();
 
-        var _this = this,
-            sentence = this.store.sentence, // sentence object
-            s = sentence['s'],              // array of good answers
-            b = sentence['b'];              // string - word you can't touch
+        var sentence = this.store.sentence, // sentence object
+            s = sentence.s,                 // array of good answers
+            b = sentence.b;                 // string - word you can't touch
 
         if (b === undefined) {          // if there are no restricted word
             b = false;
@@ -152,9 +173,7 @@ Sentence.prototype = {
             wrapper = document.createElement('div'),
             word = document.createElement('div'),
             wordInner = document.createElement('div'),
-            spill, clone, items, wordsCount, spillCount;
-
-        spill = s[0].concat();      // copy the first correct answer
+            spill, clone, wordsCount;
 
         // Prepare nodes
         itemsOnBoard.id = 'items';
@@ -165,25 +184,12 @@ Sentence.prototype = {
 
         word.appendChild(wordInner);        // append inside the word
 
-        // sort words randomly
+        // copy the first correct answer and sort words randomly
+        spill = s[0].concat();
         spill = spill.sort(function() { return 0.5 - Math.random(); });
 
-        // Check if spill is not the same as correct answers
-
-        ///////////////
-        // TO NIE DZIAŁA........
-        //////////////
-
-        function checkSpill(spill) {
-            var result = s.forEach(function(item, index, array) {
-                if (spill === item) {
-                    return false;
-                }
-            });
-        }
-
         // sort once again while spill and answer are the same
-        while (checkSpill(spill)) {
+        while (this._checkSpill(spill, s)) {
             spill = spill.sort(function() { return 0.5 - Math.random(); });
         }
 
@@ -227,9 +233,9 @@ Sentence.prototype = {
                 word = words[i];
                 wordPosition = word.getBoundingClientRect();
                 wordPositions[i] = {
-                    left: wordPosition.left - contentPosition.left,
-                    top: wordPosition.top - contentPosition.top,
-                    bottom: wordPosition.bottom,
+                    left: Math.round(wordPosition.left - contentPosition.left),
+                    top: Math.round(wordPosition.top - contentPosition.top),
+                    bottom: Math.round(wordPosition.bottom),
                 };
 
                 countWordPositions = _this.store.wordPositions.push(wordPositions);    // pre-store positions
@@ -237,7 +243,7 @@ Sentence.prototype = {
                 clone = word.cloneNode(true);
                 clone.className = clone.className + " clone";
 
-                Velocity.hook(clone, "translateX", Math.round(wordPositions[i].left) + x + "px");
+                Velocity.hook(clone, "translateX", wordPositions[i].left + x + "px");
                 Velocity.hook(clone, "translateY", wordPositions[i].top + "px");
                 //Velocity.hook(clone, "left", wordPositions[i].left + x + "px");
                 //Velocity.hook(clone, "top", wordPositions[i].top + "px");
@@ -280,12 +286,11 @@ Sentence.prototype = {
     },
 
     _createTranslation: function() {
-        var _this = this,
-            wrapperBack = this.store.wrapperBack,
+        var wrapperBack = this.store.wrapperBack,
             sentence = this.store.sentence,
-            t = sentence['t'], // string - translation
+            t = sentence.t,                             // string - translation
             translation = document.createElement('p'),
-            span;
+            span, tSplited;
 
         // Append spans in translation
         tSplited = t.split(" ");
@@ -306,7 +311,7 @@ Sentence.prototype = {
     _createFooter: function() {
         var _this = this,
             footer = this.store.footer,
-            fragment = document.createDocumentFragment();
+            fragment = document.createDocumentFragment(),
             footerTips = document.createElement('button'),
             footerBack = document.createElement('button'),
             footerShop = footer.querySelector('.btn-shop');
@@ -339,7 +344,7 @@ Sentence.prototype = {
 
         footer.appendChild(fragment);
 
-        footer.parentNode.className += ' app-footer-full';
+        //footer.parentNode.className += ' app-footer-full';
     },
 
     _newSortable: function() {
@@ -393,11 +398,10 @@ Sentence.prototype = {
     },
 
     _removeSentence: function() {
-        if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
+        if (this.state.level === 'home') { return; }    // if in main menu
 
         var itemsOnBoard = this.store.itemsOnBoard,
-            wrapperBack = this.store.wrapperBack,
-            nextArr = this.store.nextArr;
+            wrapperBack = this.store.wrapperBack;
 
         this._destroy(itemsOnBoard.firstChild);     // destroy words
         this._destroy(itemsOnBoard.firstChild);     // destroy clones
@@ -406,7 +410,7 @@ Sentence.prototype = {
     },
 
     _destroySortable: function() {
-        if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
+        if (this.state.level === 'home') { return; } // if in main menu
 
         var sortable = this.store.sortable;
         sortable.destroy();
@@ -454,7 +458,6 @@ Sentence.prototype = {
         menu.appendChild(menuItemThree);
 
         content.appendChild(menu);                                          // append menu
-        this.store.contentPosition = content.getBoundingClientRect();       // store content position
 
         menuItems = [menuItemOne, menuItemTwo, menuItemThree];
 
@@ -465,11 +468,12 @@ Sentence.prototype = {
     },
 
     homeOut: function(level) {
+        if (this.state.level !== 'home') { return; }
+
         var _this = this,
             menuItems = document.querySelectorAll('.btn-menu'),
             menuItem;
 
-        this._changeColor(level);       // change color
         this.state.level = level;       // store level state
 
         for (var i=0, len=menuItems.length; i < len; i++) {
@@ -478,7 +482,7 @@ Sentence.prototype = {
                 complete: function(elements) {
                     elements.forEach( function(item, index, array) {
                         if ( item === menuItems[len - 1] ) {
-                            _this.newSentence();
+                            _this._newSentence();
                         }
                     } );
                 }
@@ -501,7 +505,7 @@ Sentence.prototype = {
             wrapper = this.store.wrapper,
             wordPositionsNew = [],
             len = words.length,
-            wordPosition, lastChild, lastChildPosition, newPadding, count, animateClones, animateWrapperBack;
+            wordPosition, lastChild, lastChildPosition, newPadding, animateClones, animateWrapperBack;
 
         (function() {
             for (var i=0; i < len; i++) {
@@ -514,9 +518,9 @@ Sentence.prototype = {
                 wordPosition = words[i].getBoundingClientRect();
 
                 wordPositionsNew[i] = {
-                    left: Math.round( wordPosition.left ) - contentPosition.left,
-                    top: wordPosition.top - contentPosition.top,
-                    bottom: wordPosition.bottom - contentPosition.top,
+                    left: Math.round(wordPosition.left - contentPosition.left),
+                    top: Math.round(wordPosition.top - contentPosition.top),
+                    bottom: Math.round(wordPosition.bottom - contentPosition.top),
                 };
             }
         })();
@@ -556,7 +560,7 @@ Sentence.prototype = {
 
     showTrans: function() {
         if (this.state.transIn) { return; }
-        if (!this.state.rolling) { return; }
+        if (this.state.level === 'home') { return; }
 
         var _this = this,
             content = this.store.content,
@@ -588,7 +592,7 @@ Sentence.prototype = {
 
         (function() {
             for (var i=0, len=clones.length; i < len; i++) {
-                left = Math.round( wordPositions[i].left );
+                left = wordPositions[i].left;
                 Velocity(
                     clones[i],
                     { opacity: 1, translateX: [left, left + x]},
@@ -599,7 +603,7 @@ Sentence.prototype = {
     },
 
     _comeOut: function() {
-        if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
+        if (this.state.level === 'home') { return; }
 
         var _this = this,
             wordPositions = this.store.wordPositions,
@@ -624,7 +628,7 @@ Sentence.prototype = {
         (function() {
             for (var i=0, len=actualWords.length; i < len; i++) {
                 position = actualWords[i].dataset.pos - 1;
-                left = Math.round( wordPositions[position].left );
+                left = wordPositions[position].left;
                 Velocity(
                     clones[position],
                     { opacity: 1, translateX: [left - x, left]},
@@ -647,7 +651,7 @@ Sentence.prototype = {
 
 
     _showNextArr: function() {
-        if (!this.state.rolling) { return; }    // if it's not rolling, why bother?
+        if (this.state.level === 'home') { return; }
 
         var _this = this,
             itemsOnBoard = this.store.itemsOnBoard,
@@ -674,10 +678,11 @@ Sentence.prototype = {
         Velocity(nextArr, {scale: [1, 0]}, { duration: _this.opts.duration*2, easing: _this.opts.easing, delay: 200});
     },
 
-    _changeColor: function(level) {
+    _changeColor: function() {
         try {
             var section = document.getElementById('section'),
-                sectionClass = ' section-100';
+                sectionClass = ' section-100',
+                level = this.state.level;
 
             switch (level) {
                 case 'a':    section.className = 'section-green' + sectionClass; break;
@@ -686,7 +691,7 @@ Sentence.prototype = {
                 case 'menu': section.className = 'section-dark' + sectionClass; break;
             }
 
-        } catch (ex){};
+        } catch (ex) {}
     },
 
     _toggleOpacity: function(el, op) {
@@ -694,7 +699,7 @@ Sentence.prototype = {
             var pos = el.dataset.pos - 1,
                 clone = this.store.clones[pos];
             Velocity.hook(clone, "opacity", op);
-        } catch (ex){};
+        } catch (ex) {}
     },
 
     _itemsOff: function() {
@@ -720,7 +725,7 @@ Sentence.prototype = {
                 case 'c': sentence = arrayC(no); break;
             }
             return this.store.sentence = sentence;  // store sentence
-        } catch (ex){};
+        } catch (ex) { console.log(ex); }
     },
 
     _getLevels: function() {
@@ -746,6 +751,9 @@ Sentence.prototype = {
                 }
             })();
 
+            /*
+             *  !!! NOT EFICIENT
+             */
             result = function() {
                 for (var i=0, len=sentence.s.length; i < len; i++) {
                     currentSentence = sentence.s[i];
@@ -771,16 +779,15 @@ Sentence.prototype = {
     _checkBackSize: function() {
         try {
             var wordPositions = this.store.wordPositions,
-                wrapperBack = this.store.wrapperBack,
                 wrapperBackHeight = this.store.wrapperBackHeight,
                 wrapperBackTop = this.store.wrapperBackTop,
                 wordTops = [],
                 wordBottoms = [],
-                top, bottom, newHeight;
+                top, bottom, newHeight, newTop;
 
             for (var i=0, len=wordPositions.length; i < len; i++) {
-                top = Math.round( wordPositions[i].top );
-                bottom = Math.round( wordPositions[i].bottom );
+                top = wordPositions[i].top;
+                bottom = wordPositions[i].bottom;
                 wordTops.push(top);
                 wordBottoms.push(bottom);
             }
@@ -797,11 +804,11 @@ Sentence.prototype = {
                 return true;        // if the size changed, return true
             }
 
-        } catch(ex) {};
+        } catch(ex) {}
     },
 
     _watchResize: function(state) {
-        var resize
+        var resize,
             _this = this;
         if (state) {
             resize = _this._debounce(function() {
@@ -831,6 +838,7 @@ Sentence.prototype = {
 
         storage.setItem('level', state.level);
         storage.setItem('no', state.no);
+        console.log('state saved');
     },
 
     _loadState: function() {
@@ -840,16 +848,16 @@ Sentence.prototype = {
         if (storage.length > 0) {
             state.level = storage.getItem('level');
             state.no = storage.getItem('no');
-            console.log('storage is populated');
+            console.log('state loaded');
         }
     },
 
     _resetState: function() {
-        var state = this.state,
-            storage = localStorage;
+        var storage = localStorage;
 
         if (storage.length > 0) {
             storage.clear();
+            console.log('reset');
         }
     },
 
@@ -887,17 +895,26 @@ Sentence.prototype = {
         } catch (ex) {console.log(ex);}
     },
 
+    _compareArrays: function(array1, array2) {
+        if (!array1 || !array2) { return; }
+        if (array1.length !== array2.length) { return false; }
+
+        for (var i, len=array1.length; i < len; i++) {
+            if (array1[i] !== array2[i]) { return false; }
+        }
+        return true;
+    },
+
+    _checkSpill: function(spill, s) {
+        var _this = this,
+            result = s.every(function(item, index, array){
+                _this._compareArrays(spill, item);
+            });
+
+        return result;
+    },
+
 
 };
 
 var sentence = new Sentence();
-
-
-window.addEventListener('load', function() {
-
-    sentence.homeIn(); // load the menu
-
-}, false );
-
-
-

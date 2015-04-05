@@ -1,10 +1,16 @@
-function arrayA(no) {
+function arrayA(no, returnLength) {
   var array = [
     {
       "s": [
         ["Jeg", "heter", "Asgar"]
       ],
       "t": "Nazywam się Asgar."
+    },
+    {
+      "s": [
+        ["hvor", "kommer", "du", "fra", "?"]
+      ],
+      "t": "Skąd pochodzisz?"
     },
     {
       "s": [
@@ -79,16 +85,12 @@ function arrayA(no) {
         ["hvor", "kommer", "du", "fra", "?"]
       ],
       "t": "Skąd pochodzisz?"
-    },
-    {
-      "s": [
-        ["hvor", "kommer", "du", "fra", "?"]
-      ],
-      "t": "Skąd pochodzisz?"
     }
   ];
 
-  if (no >= 0) {
+  if (returnLength) {
+    return array.length;
+  } else if (no >= 0) {
     return array[no];
   }
 }

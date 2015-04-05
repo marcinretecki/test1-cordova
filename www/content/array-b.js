@@ -1,4 +1,4 @@
-function arrayB(no) {
+function arrayB(no, returnLength) {
   var array = [
     {
       "s": [
@@ -86,7 +86,9 @@ function arrayB(no) {
     }
   ];
 
-  if (no >= 0) {
+  if (returnLength) {
+    return array.length;
+  } else if (no >= 0) {
     return array[no];
   }
 }

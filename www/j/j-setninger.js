@@ -223,7 +223,7 @@ Sentence.prototype = {
             menuItemOne = document.createElement('button');
 
         // prepare nodes
-        menu.className = "items center";
+        menu.className = "items center items-menu";
         menu.id = "menu-home";
         menuItemOne.className = 'btn-menu btn-menu-hidden';
 
@@ -536,7 +536,7 @@ Sentence.prototype = {
 
         for (var i=0, len=menuItems.length; i < len; i++) {
             menuItem = menuItems[i];
-            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: _this.opts.duration * 2, easing: _this.opts.easing, delay: i*100 } );
+            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: _this.opts.duration * 2, easing: _this.opts.easing, delay: i*(_this.opts.duration /2) + _this.opts.duration / 2 } );
         }
     },
 
@@ -577,7 +577,7 @@ Sentence.prototype = {
         animateWrapperBack = this._debounce(function() {
             _this._animateWrapperBack();
         }, 500);
-        //animateWrapperBack();
+        animateWrapperBack();
 
         getPositions = this._debounce(function() {
             for (var i=0; i < len; i++) {
@@ -590,8 +590,7 @@ Sentence.prototype = {
                 };
             }
             _this.store.wordPositions = wordPositionsNew;    // store each word's position
-            console.log('get positions');
-        }, 500, true);
+        }, 10);
         getPositions();
 
         animateClones = this._debounce(function() {
@@ -599,14 +598,9 @@ Sentence.prototype = {
                 Velocity( clones[i], {
                     translateX: [wordPositionsNew[i].left, wordPositionsOld[i].left],
                     translateY: [wordPositionsNew[i].top, wordPositionsOld[i].top],
-                }, { duration: _this.opts.duration, easing: _this.opts.easing, queue: false,
-                    complete: function(elements) {
-                        //animateWrapperBack();
-                    },
-                });
+                }, { duration: _this.opts.duration, easing: _this.opts.easing, queue: false, });
             }
-            console.log('animate clones');
-        }, 1000);
+        }, 20);
         animateClones();
     },
 
@@ -982,61 +976,30 @@ Sentence.prototype = {
     },
 
 
-    // Returns a function, _this, as long as it continues to be invoked, will not
-    // be triggered. The function will be called after it stops being called for
-    // N milliseconds. If `immediate` is passed, trigger the function on the
-    // leading edge, instead of the trailing.
-    //_debounce: function(func, wait, immediate) {
-    //    var timeout;
-    //    return function() {
-    //        var context = this, args = arguments;
-    //        var later = function() {
-    //            timeout = null;
-    //            if (!immediate) func.apply(context, args);
-    //        };
-    //        var callNow = immediate && !timeout;
-    //        clearTimeout(timeout);
-    //        timeout = setTimeout(later, wait);
-    //        if (callNow) func.apply(context, args);
-    //    };
-    //},
-
     _debounce: function(func, wait) {
-     // we need to save these in the closure
-     var timeout, args, context, timestamp;
+        var timeout, args, context, timestamp;
 
-     return function() {
+        return function() {
+            context = this;
+            args = [].slice.call(arguments, 0);
+            timestamp = new Date();
 
-      // save details of latest call
-      context = this;
-      args = [].slice.call(arguments, 0);
-      timestamp = new Date();
+            var later = function() {
+                var last = (new Date()) - timestamp;
 
-      // this is where the magic happens
-      var later = function() {
+                if (last < wait) {
+                    timeout = setTimeout(later, wait - last);
+                } else {
+                    timeout = null;
+                    func.apply(context, args);
+                }
+            };
 
-       // how long ago was the last call
-       var last = (new Date()) - timestamp;
-
-       // if the latest call was less that the wait period ago
-       // then we reset the timeout to wait for the difference
-       if (last < wait) {
-        timeout = setTimeout(later, wait - last);
-
-       // or if not we can null out the timer and run the latest
-       } else {
-        timeout = null;
-        func.apply(context, args);
-       }
-      };
-
-      // we only need to set the timer now if one isn't already running
-      if (!timeout) {
-       timeout = setTimeout(later, wait);
-      }
-     }
+            if (!timeout) {
+                timeout = setTimeout(later, wait);
+            }
+        }
     },
-
 
     _toggleClass: function(el, className) {
         if (el.classList) {

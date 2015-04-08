@@ -43,6 +43,7 @@ p{font-size:22px}
 
 
 /* Menu */
+.items-menu{}
 .btn-menu{position:relative;display:block;padding:$space $space-2;width:40rem;max-width:100%;margin:0 auto;border:0;background:$white;
   font:normal normal 200 #{$size-2}/1.1 Bariol,$bariol;
   color:#000 !important;text-align:left;}
@@ -70,6 +71,8 @@ p{font-size:22px}
 
 .items{display:inline-block;width:100%;vertical-align:middle;}
 
+.items-on-board{}
+
 .btn-outer{display:inline-block;position:relative;z-index:5;padding:3px;opacity:0;
 color:#fff;text-align:center;text-decoration:none;text-transform:none;text-shadow:none;white-space:nowrap;
 overflow:hidden;cursor:move;
@@ -83,11 +86,12 @@ font:200 22px/1 Gill Sans, sans-serif;
 }
 .btn-outer:active,.btn-outer:focus{opacity:1;}
 
-.clones{position:absolute;left:0;top:0;z-index:1}
+.clones{position:absolute;left:0;top:0;z-index:1;
+transform:translate3d(0,0,0);
+backface-visbility:hidden;
+}
 .clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
 .clone .btn-word{
-//transform:translate3d(0, 0, 0);
-//backface-visbility:hidden;
 }
 
 

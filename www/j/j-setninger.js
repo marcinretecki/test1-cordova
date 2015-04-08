@@ -48,6 +48,7 @@ function Sentence() {
         contentPosition:    null,                               // position of main div OBJECT
         sentence:           null,                               // whole sentence OBJECT
         words:              [],                                 // words ARRAY
+        wordsLen:           0,                                  // number of words
         clones:             [],                                 // clones ARRAY
         wordPositions:      [],                                 // positions ARRAY
         itemsOnBoard:       null,                               // items-on-board NODE
@@ -306,6 +307,7 @@ Sentence.prototype = {
             wordsCount = this.store.words.push(newWord);          // store words
         }
 
+        this.store.wordsLen = this.store.words.length;          // store number of words
         this.store.wrapper = wrapper;                           // store wrapper
         itemsOnBoard.appendChild(wrapper);                      // append wrapper
     },
@@ -313,6 +315,7 @@ Sentence.prototype = {
     _createClones: function() {
         var _this = this,
             wrapper = this.store.wrapper,
+            itemsOnBoard = this.store.itemsOnBoard,
             contentPosition = this.store.contentPosition,
             words = this.store.words,
             x = this.opts.valueX,
@@ -353,6 +356,8 @@ Sentence.prototype = {
         this.store.wordPositions = wordPositions;       // store positions
 
         wrapper.parentNode.appendChild(clones);         // append clones
+
+        this.store.clonesNodeList = itemsOnBoard.querySelectorAll('.clone'); // store node list
     },
 
     _createWrapperBack: function() {
@@ -565,18 +570,16 @@ Sentence.prototype = {
             clones = this.store.clones,
             contentPosition = this.store.contentPosition,
             wordPositionsOld = this.store.wordPositions,
-            //wrapper = this.store.wrapper,
             wordPositionsNew = [],
-            len = words.length,
-            wordPosition, lastChild, lastChildPosition, newPadding, animateClones, animateWrapperBack;
+            len = this.store.wordsLen,
+            wordPosition, lastChild, lastChildPosition, newPadding, animateClones, animateWrapperBack, getPositions;
 
-        (function() {
-            for (var i=0; i < len; i++) {
-                //words[i].style.paddingRight = '';   // reset padding;
-            }
-        })();
+        animateWrapperBack = this._debounce(function() {
+            _this._animateWrapperBack();
+        }, 500);
+        //animateWrapperBack();
 
-        (function() {
+        getPositions = this._debounce(function() {
             for (var i=0; i < len; i++) {
                 wordPosition = words[i].getBoundingClientRect();
 
@@ -586,8 +589,10 @@ Sentence.prototype = {
                     bottom: Math.round(wordPosition.bottom - contentPosition.top),
                 };
             }
-        })();
-        this.store.wordPositions = wordPositionsNew;    // store each word's position
+            _this.store.wordPositions = wordPositionsNew;    // store each word's position
+            console.log('get positions');
+        }, 500, true);
+        getPositions();
 
         animateClones = this._debounce(function() {
             for (var i=0; i < len; i++) {
@@ -595,22 +600,14 @@ Sentence.prototype = {
                     translateX: [wordPositionsNew[i].left, wordPositionsOld[i].left],
                     translateY: [wordPositionsNew[i].top, wordPositionsOld[i].top],
                 }, { duration: _this.opts.duration, easing: _this.opts.easing, queue: false,
+                    complete: function(elements) {
+                        //animateWrapperBack();
+                    },
                 });
             }
-        }, 10);
+            console.log('animate clones');
+        }, 1000);
         animateClones();
-
-        animateWrapperBack = this._debounce(function() {
-            _this._animateWrapperBack();
-        }, 200);
-        animateWrapperBack();
-
-        // add padding to the last element
-        //lastChild = wrapper.lastChild;
-        //lastChildPosition = lastChild.getBoundingClientRect();
-        //newPadding = Math.floor( wrapperPosition.right - lastChildPosition.right );
-        //Velocity.hook(lastChild, 'paddingRight', newPadding + "px" );
-
     },
 
     _animateWrapperBack: function() {
@@ -989,20 +986,57 @@ Sentence.prototype = {
     // be triggered. The function will be called after it stops being called for
     // N milliseconds. If `immediate` is passed, trigger the function on the
     // leading edge, instead of the trailing.
-    _debounce: function(func, wait, immediate) {
-        var timeout;
-        return function() {
-            var context = this, args = arguments;
-            var later = function() {
-                timeout = null;
-                if (!immediate) func.apply(context, args);
-            };
-            var callNow = immediate && !timeout;
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-            if (callNow) func.apply(context, args);
-        };
+    //_debounce: function(func, wait, immediate) {
+    //    var timeout;
+    //    return function() {
+    //        var context = this, args = arguments;
+    //        var later = function() {
+    //            timeout = null;
+    //            if (!immediate) func.apply(context, args);
+    //        };
+    //        var callNow = immediate && !timeout;
+    //        clearTimeout(timeout);
+    //        timeout = setTimeout(later, wait);
+    //        if (callNow) func.apply(context, args);
+    //    };
+    //},
+
+    _debounce: function(func, wait) {
+     // we need to save these in the closure
+     var timeout, args, context, timestamp;
+
+     return function() {
+
+      // save details of latest call
+      context = this;
+      args = [].slice.call(arguments, 0);
+      timestamp = new Date();
+
+      // this is where the magic happens
+      var later = function() {
+
+       // how long ago was the last call
+       var last = (new Date()) - timestamp;
+
+       // if the latest call was less that the wait period ago
+       // then we reset the timeout to wait for the difference
+       if (last < wait) {
+        timeout = setTimeout(later, wait - last);
+
+       // or if not we can null out the timer and run the latest
+       } else {
+        timeout = null;
+        func.apply(context, args);
+       }
+      };
+
+      // we only need to set the timer now if one isn't already running
+      if (!timeout) {
+       timeout = setTimeout(later, wait);
+      }
+     }
     },
+
 
     _toggleClass: function(el, className) {
         if (el.classList) {

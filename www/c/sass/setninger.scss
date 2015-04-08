@@ -22,7 +22,7 @@ font-style:normal;
 -webkit-appearance: carret;
 -webkit-appearance: none;
 }
-html{font:200 100%/1.25 "Gill Sans", sans-serif}
+html{font:200 1em/1.25 "Gill Sans", sans-serif}
 body{-webkit-text-size-adjust:none;}
 .header{position:absolute;left:0;right:0;top:0;padding-top:20px;background:$dark-btn;}
 .header-content{width:100%;text-align:center;background:#fff}
@@ -69,7 +69,7 @@ p{font-size:22px}
 .items{display:inline-block;width:100%;vertical-align:middle;}
 
 .btn-outer{display:inline-block;position:relative;z-index:5;padding:3px;opacity:0;
-color:#fff;text-align:center;text-decoration:none;text-transform:none;text-shadow:none;white-space: normal;
+color:#fff;text-align:center;text-decoration:none;text-transform:none;text-shadow:none;white-space:nowrap;
 overflow:hidden;cursor:move;
 -webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;-o-user-select:none;user-select:none;
 transition:none;
@@ -116,7 +116,7 @@ transition:all 400ms cubic-bezier(0.645, 0.045, 0.355, 1) 0s;}
 .btn-footer-translate{display:inline-block;}
 .btn-footer-shop{float:right;}
 
-.btn-footer-hidden{opacity:0;cursor:default}
+.btn-footer-hidden{opacity:0;cursor:default;pointer-events:none;}
 
 // Section colors
 .section-orange .wrapper-back,.section-orange .next-arr{background-color:$orange-light;}

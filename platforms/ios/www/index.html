@@ -4,113 +4,41 @@
   <title itemprop="name">Setninger</title>
 
   <link rel="stylesheet" type="text/css" href="c/s.css" />
-  <link rel="stylesheet" type="text/css" href="c/pisanie.css" />
+  <link rel="stylesheet" type="text/css" href="c/setninger.css" />
 
   <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, target-densitydpi=device-dpi" />
 
 
   <meta charset="UTF-8">
 
-<style>
-*{-webkit-user-select: none;
--webkit-touch-callout: none;
--webkit-appearance: carret;
--webkit-appearance: none;
-}
-.header-main{width:100%;}
-.header-content{width:100%;text-align:center;}
-.header-content a{display:inline-block;border:0;color:#110f0c}
-.header-content .logo{color:#110f0c;}
-.header-content a:hover,.header-content a:active,.header-content a:focus{background:#edeae7;color:#000;}
-
-.header-trans{opacity:0.95;border-bottom:1px solid #1A2226;background:#fff;}
-.header-trans:after{display:none}
-
-.header-content [class*="col-"]{
-  margin-bottom:0;
-}
-
-
-.header-content .right{position:absolute;right:0}
-.header-content .left{position:absolute;left:0}
-.header-trans{border-color:#3c454c;}
-
-
-/* Menu */
-.btn-menu{position:relative;display:block;padding:1.25rem 2.5rem;width:40rem;max-width:100%;margin:0 auto 2.5rem;border:0;background:#fff;font-size:1.667rem;color:#000 !important;text-align:left;font-family:Bariol,Helvetica Neue;font-weight:200;}
-.btn-menu:hover{background:#fff;color:#000;}
-
-.btn-menu-hidden{opacity:0;transition:none;}
-
-.btn-menu-1{border-top:0.625rem solid #308c8c;}
-.btn-menu-2{border-top:0.625rem solid #de7642;}
-.btn-menu-3{border-top:0.625rem solid #dd4b39;}
-
-.btn-menu-1 div{color:#308c8c;}
-.btn-menu-2 div{color:#de7642;}
-.btn-menu-3 div{color:#dd4b39;}
-
-.btn-menu .percent{font-size:1.25rem;line-height:1.5;position:absolute;right:2.5rem;bottom:1.25rem;}
-
-
-/* Sentence */
-
-.items-block{overflow:hidden;position:absolute;top:0;right:0;bottom:0;left:0;font-size:0;}
-.items-block:before{content: '';display:inline-block;height:100%;vertical-align:middle;}
-.items{display:inline-block;position:relative;width:100%;vertical-align:middle;}
-
-.btn-word{border:1px solid transparent;background-color:#1c7373;
-margin:10px;cursor:move;position:relative;text-shadow:none;
--webkit-user-select: none;
--moz-user-select: none;
--ms-user-select: none;
--o-user-select: none;
-user-select: none;
-opacity:0;overflow:hidden;
-z-index:5;
-position:relative;
-transition:all 0.2s cubic-bezier(.645,.045,.355,1);
-}
-.btn-word:hover{border-color:#0f6666;opacity:0.75;}
-
-.clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
-
-.sortable-ghost {-opacity:0.75;}
-
-
-.translation{margin:0;font-style:italic;}
-.translation span{display:inline-block;opacity:0;}
-
-
-.app-footer{position:absolute;bottom:0;left:0;right:0;}
-
-.btn-translate{display:inline-block;border:1px solid #60b3b3;background:transparent;color:#60B3B3;}
-.btn-translate:hover,.btn-translate:focus{border-color:#fff;color:#fff}
-
-
-
-</style>
-
 </head>
 <body>
 
-<header class="header-main header-trans">
-  <div class="header-content group">
-      <a class="logo" href="">Setninger</a>
+<header class="header">
+  <div class="header-content">
+    <a class="logo" href="">Setninger</a>
   </div>
 </header>
 
-<div class="section-dark section-100">
-
-  <div id="content" class="section-content section-100 items-block centered">
+<div id="section" class="section-dark section-100">
+  <div id="content" class="section-100 items-block">
+    <footer class="app-footer">
+      <div id="wrapper-buttons" class="section-content section-footer group centered">
+        <button id="backHome" class="btn-footer btn-footer-menu btn-footer-hidden" type="button">= Menu</button>
+        <button id="showTrans" class="btn-footer btn-footer-translate btn-footer-hidden" type="button">? Tips</button>
+        <button id="resetState" class="btn-footer btn-footer-shop" type="button">$</button>
+      </div>
+    </footer>
   </div>
-
 </div>
 
 <script src="j/fastclick.js"></script>
+<script src="j/sortable.js"></script>
 <script src="j/velocity.min.js"></script>
 
 <script src="content/array-a.js"></script>
+<script src="content/array-b.js"></script>
+<script src="content/array-c.js"></script>
 
 <script src="j/j-setninger.js"></script>
 </body>

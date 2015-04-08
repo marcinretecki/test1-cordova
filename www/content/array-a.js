@@ -8,6 +8,24 @@ function arrayA(no, returnLength) {
     },
     {
       "s": [
+        ["Han", "heter", "Jon"]
+      ],
+      "t": "On nazywa się Jon."
+    },
+    {
+      "s": [
+        ["Hun", "heter", "Emma"]
+      ],
+      "t": "Ona nazywa się Emma."
+    },
+    {
+      "s": [
+        ["De", "heter", "Adam og Sara"]
+      ],
+      "t": "Oni nazywają się Adam i Sara."
+    },
+    {
+      "s": [
         ["hvor", "kommer", "du", "fra", "?"]
       ],
       "t": "Skąd pochodzisz?"

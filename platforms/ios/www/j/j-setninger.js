@@ -5,782 +5,6 @@
 //    }, false);
 //}
 //
-/**!
- * Sortable
- * @author  RubaXa   <trash@rubaxa.org>
- * @license MIT
- */
-
-
-(function (factory){
-    "use strict";
-
-    if( typeof define === "function" && define.amd ){
-        define(factory);
-    }
-    else if( typeof module != "undefined" && typeof module.exports != "undefined" ){
-        module.exports = factory();
-    }
-    else {
-        window["Sortable"] = factory();
-    }
-})(function (){
-    "use strict";
-
-    var
-          dragEl
-        , ghostEl
-        , rootEl
-        , nextEl
-
-        , lastEl
-        , lastCSS
-
-        , activeGroup
-
-        , tapEvt
-        , touchEvt
-
-        , expando = 'Sortable' + (new Date).getTime()
-
-        , win = window
-        , document = win.document
-        , parseInt = win.parseInt
-        , supportIEdnd = !!document.createElement('div').dragDrop
-
-        , _silent = false
-
-        , _createEvent = function (event/**String*/, item/**HTMLElement*/){
-            var evt = document.createEvent('Event');
-            evt.initEvent(event, true, true);
-            evt.item = item;
-            return evt;
-        }
-
-        , _dispatchEvent = function (rootEl, name, targetEl) {
-            rootEl.dispatchEvent(_createEvent(name, targetEl || rootEl));
-        }
-
-        , _customEvents = 'onAdd onUpdate onRemove onStart onEnd onFilter'.split(' ')
-
-        , noop = function (){}
-        , slice = [].slice
-
-        , touchDragOverListeners = []
-    ;
-
-
-
-    /**
-     * @class  Sortable
-     * @param  {HTMLElement}  el
-     * @param  {Object}       [options]
-     */
-    function Sortable(el, options){
-        this.el = el; // root element
-        this.options = options = (options || {});
-
-
-        // Defaults
-        var defaults = {
-            group: Math.random(),
-            store: null,
-            handle: null,
-            draggable: el.children[0] && el.children[0].nodeName || (/[uo]l/i.test(el.nodeName) ? 'li' : '*'),
-            ghostClass: 'sortable-ghost',
-            ignore: 'a, img',
-            filter: null,
-            animation: 0
-        };
-
-        // Set default options
-        for (var name in defaults) {
-            options[name] = options[name] || defaults[name];
-        }
-
-
-        // Define events
-        _customEvents.forEach(function (name) {
-            options[name] = _bind(this, options[name] || noop);
-            _on(el, name.substr(2).toLowerCase(), options[name]);
-        }, this);
-
-
-        // Export group name
-        el[expando] = options.group;
-
-
-        // Bind all private methods
-        for( var fn in this ){
-            if( fn.charAt(0) === '_' ){
-                this[fn] = _bind(this, this[fn]);
-            }
-        }
-
-
-        // Bind events
-        _on(el, 'mousedown', this._onTapStart);
-        _on(el, 'touchstart', this._onTapStart);
-        supportIEdnd && _on(el, 'selectstart', this._onTapStart);
-
-        _on(el, 'dragover', this._onDragOver);
-        _on(el, 'dragenter', this._onDragOver);
-
-        touchDragOverListeners.push(this._onDragOver);
-
-        // Restore sorting
-        options.store && this.sort(options.store.get(this));
-    }
-
-
-    Sortable.prototype = /** @lends Sortable.prototype */ {
-        constructor: Sortable,
-
-
-        _applyEffects: function (){
-            _toggleClass(dragEl, this.options.ghostClass, true);
-        },
-
-
-        _onTapStart: function (evt/**Event|TouchEvent*/){
-            var
-                  touch = evt.touches && evt.touches[0]
-                , target = (touch || evt).target
-                , options =  this.options
-                , el = this.el
-                , filter = options.filter
-            ;
-
-            if( evt.type === 'mousedown' && evt.button !== 0 ) {
-                return; // only left button
-            }
-
-            // Check filter
-            if( typeof filter === 'function' && filter.call(this, target, this) ){
-                _dispatchEvent(el, 'filter', target);
-                return; // cancel dnd
-            }
-            else if( filter ){
-                filter = filter.split(',').filter(function (criteria) {
-                    return _closest(target, criteria.trim(), el);
-                });
-
-                if (filter.length) {
-                    _dispatchEvent(el, 'filter', target);
-                    return; // cancel dnd
-                }
-            }
-
-            if( options.handle ){
-                target = _closest(target, options.handle, el);
-            }
-
-            target = _closest(target, options.draggable, el);
-
-            // IE 9 Support
-            if( target && evt.type == 'selectstart' ){
-                if( target.tagName != 'A' && target.tagName != 'IMG'){
-                    target.dragDrop();
-                }
-            }
-
-            if( target && !dragEl && (target.parentNode === el) ){
-                tapEvt = evt;
-
-                rootEl = this.el;
-                dragEl = target;
-                nextEl = dragEl.nextSibling;
-                activeGroup = this.options.group;
-
-                dragEl.draggable = true;
-
-                // Disable "draggable"
-                options.ignore.split(',').forEach(function (criteria) {
-                    _find(target, criteria.trim(), _disableDraggable);
-                });
-
-                if( touch ){
-                    // Touch device support
-                    tapEvt = {
-                          target:  target
-                        , clientX: touch.clientX
-                        , clientY: touch.clientY
-                    };
-
-                    this._onDragStart(tapEvt, true);
-                    evt.preventDefault();
-                }
-
-                _on(document, 'mouseup', this._onDrop);
-                _on(document, 'touchend', this._onDrop);
-                _on(document, 'touchcancel', this._onDrop);
-
-                _on(this.el, 'dragstart', this._onDragStart);
-                _on(this.el, 'dragend', this._onDrop);
-                _on(document, 'dragover', _globalDragOver);
-
-
-                try {
-                    if( document.selection ){
-                        document.selection.empty();
-                    } else {
-                        window.getSelection().removeAllRanges()
-                    }
-                } catch (err){ }
-
-
-                _dispatchEvent(dragEl, 'start');
-            }
-        },
-
-        _emulateDragOver: function (){
-            if( touchEvt ){
-                _css(ghostEl, 'display', 'none');
-
-                var
-                      target = document.elementFromPoint(touchEvt.clientX, touchEvt.clientY)
-                    , parent = target
-                    , group = this.options.group
-                    , i = touchDragOverListeners.length
-                ;
-
-                if( parent ){
-                    do {
-                        if( parent[expando] === group ){
-                            while( i-- ){
-                                touchDragOverListeners[i]({
-                                    clientX: touchEvt.clientX,
-                                    clientY: touchEvt.clientY,
-                                    target: target,
-                                    rootEl: parent
-                                });
-                            }
-                            break;
-                        }
-
-                        target = parent; // store last element
-                    }
-                    while( parent = parent.parentNode );
-                }
-
-                _css(ghostEl, 'display', '');
-            }
-        },
-
-
-        _onTouchMove: function (evt/**TouchEvent*/){
-            if( tapEvt ){
-                var
-                      touch = evt.touches[0]
-                    , dx = touch.clientX - tapEvt.clientX
-                    , dy = touch.clientY - tapEvt.clientY
-                    , translate3d = 'translate3d(' + dx + 'px,' + dy + 'px,0)'
-                ;
-
-                touchEvt = touch;
-
-                _css(ghostEl, 'webkitTransform', translate3d);
-                _css(ghostEl, 'mozTransform', translate3d);
-                _css(ghostEl, 'msTransform', translate3d);
-                _css(ghostEl, 'transform', translate3d);
-
-                evt.preventDefault();
-            }
-        },
-
-
-        _onDragStart: function (evt/**Event*/, isTouch/**Boolean*/){
-            var dataTransfer = evt.dataTransfer;
-
-            this._offUpEvents();
-
-            if( isTouch ){
-                var
-                      rect = dragEl.getBoundingClientRect()
-                    , css = _css(dragEl)
-                    , ghostRect
-                ;
-
-                ghostEl = dragEl.cloneNode(true);
-
-                _css(ghostEl, 'top', rect.top - parseInt(css.marginTop, 10));
-                _css(ghostEl, 'left', rect.left - parseInt(css.marginLeft, 10));
-                _css(ghostEl, 'width', rect.width);
-                _css(ghostEl, 'height', rect.height);
-                _css(ghostEl, 'opacity', '0.8');
-                _css(ghostEl, 'position', 'fixed');
-                _css(ghostEl, 'zIndex', '100000');
-
-                rootEl.appendChild(ghostEl);
-
-                // Fixing dimensions.
-                ghostRect = ghostEl.getBoundingClientRect();
-                _css(ghostEl, 'width', rect.width*2 - ghostRect.width);
-                _css(ghostEl, 'height', rect.height*2 - ghostRect.height);
-
-                // Bind touch events
-                _on(document, 'touchmove', this._onTouchMove);
-                _on(document, 'touchend', this._onDrop);
-                _on(document, 'touchcancel', this._onDrop);
-
-                this._loopId = setInterval(this._emulateDragOver, 150);
-            }
-            else {
-                dataTransfer.effectAllowed = 'move';
-                dataTransfer.setData('Text', dragEl.textContent);
-
-                _on(document, 'drop', this._onDrop);
-            }
-
-            setTimeout(this._applyEffects);
-        },
-
-
-        _onDragOver: function (evt/**Event*/){
-            if( !_silent && (activeGroup === this.options.group) && (evt.rootEl === void 0 || evt.rootEl === this.el) ){
-                var
-                      el = this.el
-                    , target = _closest(evt.target, this.options.draggable, el)
-                    , dragRect = dragEl.getBoundingClientRect()
-                ;
-
-                if( el.children.length === 0 || el.children[0] === ghostEl || (el === evt.target) && _ghostInBottom(el, evt) ){
-                    el.appendChild(dragEl);
-
-                    // ANIMATE
-                    this._animate(dragRect, dragEl);
-
-                    this._velocity();
-
-                }
-                else if( target && !target.animated && target !== dragEl && (target.parentNode[expando] !== void 0) ){
-                    if( lastEl !== target ){
-                        lastEl = target;
-                        lastCSS = _css(target);
-                    }
-
-
-                    var   targetRect = target.getBoundingClientRect()
-                        , width = targetRect.right - targetRect.left
-                        , height = targetRect.bottom - targetRect.top
-                        , floating = /left|right|inline/.test(lastCSS.cssFloat + lastCSS.display)
-                        , isWide = (target.offsetWidth > dragEl.offsetWidth)
-                        , isLong = (target.offsetHeight > dragEl.offsetHeight)
-                        , halfway = (floating ? (evt.clientX - targetRect.left)/width : (evt.clientY - targetRect.top)/height) > .5
-                        , nextSibling = target.nextElementSibling
-                        , after
-                    ;
-
-                    _silent = true;
-                    setTimeout(_unsilent, 30);
-
-                    if( floating ){
-                        after = (target.previousElementSibling === dragEl) && !isWide || halfway && isWide;
-                    } else {
-                        after = (nextSibling !== dragEl) && !isLong || halfway && isLong;
-                    }
-
-                    if( after && !nextSibling ){
-                        el.appendChild(dragEl);
-
-                        // ANIMATE
-                        this._animate(dragRect, dragEl);
-
-                        this._velocity();
-                    } else {
-                        target.parentNode.insertBefore(dragEl, after ? nextSibling : target);
-
-                        // ANIMATE
-                        this._animate(dragRect, dragEl);
-                        this._animate(targetRect, target);
-
-                        this._velocity();
-                    }
-                }
-            }
-        },
-
-        _animate: function (prevRect, target) {
-            var ms = this.options.animation;
-
-            if (ms) {
-                var currentRect = target.getBoundingClientRect();
-
-                _css(target, 'transition', 'none');
-                _css(target, 'transform', 'translate3d('
-                    + (prevRect.left - currentRect.left) + 'px,'
-                    + (prevRect.top - currentRect.top) + 'px,0)'
-                );
-
-                target.offsetWidth; // repaint
-
-                _css(target, 'transition', 'all ' + ms + 'ms');
-                _css(target, 'transform', 'translate3d(0,0,0)');
-
-                clearTimeout(target.animated);
-                target.animated = setTimeout(function () {
-                    _css(target, 'transition', '');
-                    target.animated = false;
-                }, ms);
-            }
-        },
-
-        _velocity: function () {
-
-            var wrapper = document.querySelector('#items'),
-                wrapper_position = wrapper.getBoundingClientRect(),
-                words = wrapper.querySelectorAll('.btn-word'),
-                clones = wrapper.parentNode.querySelector('.clones').querySelectorAll('.clone'),
-                word,
-                word_position,
-                clone,
-                i,
-                len,
-                pos;
-
-            for (i=0, len=words.length; i < len; i++) {
-                word = words[i];
-                word_position = word.getBoundingClientRect();
-
-                pos = word.getAttribute('data-pos') - 1;
-                clone = clones[pos];
-
-                Velocity.hook(clone, "translateX", word_position.left - wrapper_position.left - 10 + "px");
-                Velocity.hook(clone, "translateY", word_position.top - wrapper_position.top - 10 + "px");
-
-            }
-
-        },
-
-        _offUpEvents: function () {
-            _off(document, 'mouseup', this._onDrop);
-            _off(document, 'touchmove', this._onTouchMove);
-            _off(document, 'touchend', this._onDrop);
-            _off(document, 'touchcancel', this._onDrop);
-        },
-
-        _onDrop: function (evt/**Event*/){
-            clearInterval(this._loopId);
-
-            // Unbind events
-            _off(document, 'drop', this._onDrop);
-            _off(document, 'dragover', _globalDragOver);
-
-            _off(this.el, 'dragend', this._onDrop);
-            _off(this.el, 'dragstart', this._onDragStart);
-            _off(this.el, 'selectstart', this._onTapStart);
-
-            this._offUpEvents();
-
-            if( evt ){
-                evt.preventDefault();
-                evt.stopPropagation();
-
-                if( ghostEl ){
-                    ghostEl.parentNode.removeChild(ghostEl);
-                }
-
-                if( dragEl ){
-                    _disableDraggable(dragEl);
-                    _toggleClass(dragEl, this.options.ghostClass, false);
-
-                    if( !rootEl.contains(dragEl) ){
-                        // Remove event
-                        _dispatchEvent(rootEl, 'remove', dragEl);
-
-                        // Add event
-                        _dispatchEvent(dragEl, 'add');
-                    }
-                    else if( dragEl.nextSibling !== nextEl ){
-                        // Update event
-                        _dispatchEvent(dragEl, 'update');
-                    }
-
-                    _dispatchEvent(dragEl, 'end');
-                }
-
-                // Set NULL
-                rootEl =
-                dragEl =
-                ghostEl =
-                nextEl =
-
-                tapEvt =
-                touchEvt =
-
-                lastEl =
-                lastCSS =
-
-                activeGroup = null;
-
-                // Save sorting
-                this.options.store && this.options.store.set(this);
-            }
-        },
-
-
-        /**
-         * Serializes the item into an array of string.
-         * @returns {String[]}
-         */
-        toArray: function () {
-            var order = [],
-                el,
-                children = this.el.children,
-                i = 0,
-                n = children.length
-            ;
-
-            for (; i < n; i++) {
-                el = children[i];
-                if (_closest(el, this.options.draggable, this.el)) {
-                    order.push(el.getAttribute('data-id') || _generateId(el));
-                }
-            }
-
-            return order;
-        },
-
-
-        /**
-         * Sorts the elements according to the array.
-         * @param  {String[]}  order  order of the items
-         */
-        sort: function (order) {
-            var items = {}, rootEl = this.el;
-
-            this.toArray().forEach(function (id, i) {
-                var el = rootEl.children[i];
-
-                if (_closest(el, this.options.draggable, rootEl)) {
-                    items[id] = el;
-                }
-            }, this);
-
-
-            order.forEach(function (id) {
-                if (items[id]) {
-                    rootEl.removeChild(items[id]);
-                    rootEl.appendChild(items[id]);
-                }
-            });
-        },
-
-
-        /**
-         * For each element in the set, get the first element that matches the selector by testing the element itself and traversing up through its ancestors in the DOM tree.
-         * @param   {HTMLElement}  el
-         * @param   {String}       [selector]  default: `options.draggable`
-         * @returns {HTMLElement|null}
-         */
-        closest: function (el, selector) {
-            return _closest(el, selector || this.options.draggable, this.el);
-        },
-
-
-        /**
-         * Destroy
-         */
-        destroy: function () {
-            var el = this.el, options = this.options;
-
-            _customEvents.forEach(function (name) {
-                _off(el, name.substr(2).toLowerCase(), options[name]);
-            });
-
-            _off(el, 'mousedown', this._onTapStart);
-            _off(el, 'touchstart', this._onTapStart);
-            _off(el, 'selectstart', this._onTapStart);
-
-            _off(el, 'dragover', this._onDragOver);
-            _off(el, 'dragenter', this._onDragOver);
-
-            //remove draggable attributes
-            Array.prototype.forEach.call(el.querySelectorAll('[draggable]'), function(el) {
-                el.removeAttribute('draggable');
-            });
-
-            touchDragOverListeners.splice(touchDragOverListeners.indexOf(this._onDragOver), 1);
-
-            this._onDrop();
-
-            this.el = null;
-        }
-    };
-
-
-    function _bind(ctx, fn){
-        var args = slice.call(arguments, 2);
-        return  fn.bind ? fn.bind.apply(fn, [ctx].concat(args)) : function (){
-            return fn.apply(ctx, args.concat(slice.call(arguments)));
-        };
-    }
-
-
-    function _closest(el, selector, ctx){
-        if( selector === '*' ){
-            return el;
-        }
-        else if( el ){
-            ctx = ctx || document;
-            selector = selector.split('.');
-
-            var
-                  tag = selector.shift().toUpperCase()
-                , re = new RegExp('\\s('+selector.join('|')+')\\s', 'g')
-            ;
-
-            do {
-                if(
-                       (tag === '' || el.nodeName == tag)
-                    && (!selector.length || ((' '+el.className+' ').match(re) || []).length == selector.length)
-                ){
-                    return  el;
-                }
-            }
-            while( el !== ctx && (el = el.parentNode) );
-        }
-
-        return  null;
-    }
-
-
-    function _globalDragOver(evt){
-        evt.dataTransfer.dropEffect = 'move';
-        evt.preventDefault();
-    }
-
-
-    function _on(el, event, fn){
-        el.addEventListener(event, fn, false);
-    }
-
-
-    function _off(el, event, fn){
-        el.removeEventListener(event, fn, false);
-    }
-
-
-    function _toggleClass(el, name, state){
-        if( el ){
-            if( el.classList ){
-                el.classList[state ? 'add' : 'remove'](name);
-            }
-            else {
-                var className = (' '+el.className+' ').replace(/\s+/g, ' ').replace(' '+name+' ', '');
-                el.className = className + (state ? ' '+name : '');
-            }
-        }
-    }
-
-
-    function _css(el, prop, val){
-        var style = el && el.style;
-
-        if( style ){
-            if( val === void 0 ){
-                if( document.defaultView && document.defaultView.getComputedStyle ){
-                    val = document.defaultView.getComputedStyle(el, '');
-                }
-                else if( el.currentStyle ){
-                    val = el.currentStyle;
-                }
-
-                return prop === void 0 ? val : val[prop];
-            }
-            else {
-                if (!(prop in style)) {
-                    prop = '-webkit-' + prop;
-                }
-
-                style[prop] = val + (typeof val === 'string' ? '' : 'px');
-            }
-        }
-    }
-
-
-    function _find(ctx, tagName, iterator){
-        if( ctx ){
-            var list = ctx.getElementsByTagName(tagName), i = 0, n = list.length;
-            if( iterator ){
-                for( ; i < n; i++ ){
-                    iterator(list[i], i);
-                }
-            }
-            return  list;
-        }
-        return  [];
-    }
-
-
-    function _disableDraggable(el){
-        return el.draggable = false;
-    }
-
-
-    function _unsilent(){
-        _silent = false;
-    }
-
-
-    function _ghostInBottom(el, evt){
-        var last = el.lastElementChild.getBoundingClientRect();
-        return evt.clientY - (last.top + last.height) > 5; // min delta
-    }
-
-
-    /**
-     * Generate id
-     * @param   {HTMLElement} el
-     * @returns {String}
-     * @private
-     */
-    function _generateId(el) {
-        var str = el.tagName + el.className + el.src + el.href + el.textContent,
-            i = str.length,
-            sum = 0
-        ;
-
-        while (i--) {
-            sum += str.charCodeAt(i);
-        }
-
-        return sum.toString(36);
-    }
-
-
-    // Export utils
-    Sortable.utils = {
-        on: _on,
-        off: _off,
-        css: _css,
-        find: _find,
-        bind: _bind,
-        closest: _closest,
-        toggleClass: _toggleClass,
-        createEvent: _createEvent,
-        dispatchEvent: _dispatchEvent
-    };
-
-
-    Sortable.version = '0.6.0';
-
-    /**
-     * Create sortable instance
-     * @param {HTMLElement}  el
-     * @param {Object}      [options]
-     */
-    Sortable.create = function (el, options) {
-        return new Sortable(el, options)
-    };
-
-    // Export
-    return Sortable;
-});
-
-
-
-
 
 
 
@@ -802,77 +26,531 @@ Structure:
 
 
 
+What happens when:
+
+-
+
+*/
+
+/*
+    - pamiętaj, żeby wszystkie event listeners przenieść na document itd.... (to ważne)
 */
 
 
 
+
 function Sentence() {
-    this.content = document.getElementById('content');
+
+    this.store = {
+        section:    document.getElementById('section'),         // main section NODE
+        content:    document.getElementById('content'),         // main div NODE
+        footer:     document.getElementById('wrapper-buttons'), // footer NODE
+        contentPosition:    null,                               // position of main div OBJECT
+        sentence:           null,                               // whole sentence OBJECT
+        words:              [],                                 // words ARRAY
+        clones:             [],                                 // clones ARRAY
+        wordPositions:      [],                                 // positions ARRAY
+        itemsOnBoard:       null,                               // items-on-board NODE
+        wrapper:            null,                               // wrapper NODE
+        wrapperBack:        null,                               // wrapperBack NODE
+        wrapperBackHeight:  0,                                  // wrapperBack height
+        wrapperBackTop:     0,                                  // wrapperBack top
+        nextArr:            null,                               // nextArr NODE
+        translationSpans:   [],                                 // translation spans ARRAY of NODEs
+        menuItems:          [],                                 // menu buttons ARRAY of NODEs
+    };
+
+    this.opts = {
+        easing:     [0.645,0.045,0.355,1],
+        duration:   200,
+        valueX:     400,
+    };
+
+    this.state = {
+        transIn:    false,
+        footerIn:   false,
+        btns:       {
+                        showTrans:  false,
+                        backHome:   false,
+                        nextArr:    false,
+                    },
+        level:      'home',
+        a:          0,
+        b:          0,
+        c:          0,
+        pct:        [],
+    };
+
+    // Init
+    this._loadState();
+    this._begin();
 }
 
 Sentence.prototype = {
 
     constructor: Sentence,
 
-    homeIn: function() {
-        var that = this,
-            content = this.content,
-            menu = document.createElement('div'),
-            menuItemClass = "btn-menu btn-menu-hidden";
-            menuItemOne = document.createElement('button'),
-            menuItemTwo = menuItemOne.cloneNode(true),
-            menuItemThree = menuItemOne.cloneNode(true);
+    /**
+     *  TOC
+     *
+     *  - sequencing
+     *  - creation
+     *  - removal
+     *  - animation
+     *  - helpers
+     *
+     */
 
+
+    /**
+     *  SEQUENCING
+     */
+
+    _begin: function() {
+        var content = this.store.content;
+
+        this.store.contentPosition = content.getBoundingClientRect();
+
+        this._attachListeners();
+
+        if (this.state.level === 'home') {
+            this._createMenu();
+            this.menuIn();
+        } else {
+            this._newSentence();
+        }
+
+    },
+
+    _newSentence: function() {
+        this._changeColor();                    // change color
+        this._removeHome();                     // remove the menu
+        this._toggleFooter();                   // show footer
+        this._getSentence();                    // get the words
+        this._createItemsOnBoard();             // create items-on-board
+        this._createSentence();                 // create the words
+        this._createClones();                   // clone the words
+        this._createWrapperBack();              // create the background
+        this._createTranslation();              // create translation
+        this._createNextArr();                  // create next arr
+        this._newSortable();                    // init. Sortable
+        this._watchResize(true);                // watch browser changes
+
+        this._saveState();                      // save state in localStorage
+
+        this._comeIn();                         // let the sentence in
+    },
+
+    _finishedSentence: function() {
+        var level = this.state.level,
+            no = this.state[level];
+
+        if (level !== 'home') {
+            this._destroySortable();            // destroy sortable
+            this.state[level] = no + 1;         // save sentence number
+            this._saveState();                  // save state in localStorage
+            this.showTrans();                   // show translation
+            this._toggleItems();                // change color of words
+            this._toggleNextArr();              // show arrow next
+        }
+    },
+
+    nextSentence: function() {
+        var level = this.state.level;
+
+        if (level !== 'home') {
+            var _this = this,
+                onComplete = this._debounce(function() {
+                                _this._toggleItems();               // back to normal color of words
+                                _this._removeSentence();            // remove sentence and translate
+                                _this._cleanStore();                // clean store
+
+                                _this._getSentence();               // get the words
+                                _this._createSentence();            // create the words
+                                _this._createClones();              // clone the words
+                                _this._animateWrapperBack();        // animate back
+                                _this._createTranslation();         // create translation
+                                _this._createNextArr();             // create next arr
+                                _this._newSortable();               // init. Sortable
+                                _this._watchResize(true);           // watch browser changes
+                                _this._toggleBtn('showTrans',true); // reset showTrans
+
+                                _this._comeIn();                    // let the sentence in
+                            }, 300);
+
+            this._comeOut(onComplete);           // animate everything out
+        }
+    },
+
+    backHome: function() {
+        if (this.state.level === 'home') { return; }
+
+        var _this = this,
+            itemsOnBoard = this.store.content.firstChild;
+
+        this._watchResize(false);                       // stop watching browser changes
+        this._toggleFooter();                           // hide footer
+
+        function onComplete() {
+            _this.state.level = 'home';                 // save state
+            _this._saveState();
+            _this._removeSentence();                    // remove sentence and translation
+
+            function onCompleteBack() {
+                _this._destroy(itemsOnBoard);
+                _this._changeColor();                   // change color
+                _this._cleanStore();                    // clean store
+
+                _this._createMenu();
+                _this.menuIn();
+            };
+            _this._removeWrapperBack(onCompleteBack);   // remove wrapper back
+        };
+        this._comeOut(onComplete);            // animate sentence, destroy it, animate back, destroy it
+
+    },
+
+
+    /**
+     *  CREATION
+     */
+
+    _createMenu: function() {
+        var _this = this,
+            content = this.store.content,
+            menu = document.createElement('div'),               // new nodes
+            menuItemOne = document.createElement('button');
+
+        // prepare nodes
         menu.className = "items center";
         menu.id = "menu-home";
+        menuItemOne.className = 'btn-menu btn-menu-hidden';
 
-        menuItemOne.className = menuItemClass + " btn-menu-1";
-        menuItemOne.innerHTML = '<span>Od podstaw</span><div class="percent">87%</div>';
-        menuItemOne.addEventListener('click', function() {
-            that.homeOut('a');
-        });
+        // clone nodes
+        var menuItemTwo = menuItemOne.cloneNode(true),
+            menuItemThree = menuItemOne.cloneNode(true);
 
-        menuItemTwo.className = menuItemClass + " btn-menu-2";
-        menuItemTwo.innerHTML = '<span>Średnio-zaawansowane</span><div class="percent">100%</div>';
-        menuItemTwo.addEventListener('click', function() {
-            that.homeOut('b');
-        });
+        this._getLevelsPct();                                   // get percentage of each level
 
-        menuItemThree.className = menuItemClass + " btn-menu-3";
-        menuItemThree.innerHTML = '<span>Zaawansowane</span><div class="percent">5%</div>';
-        menuItemThree.addEventListener('click', function() {
-            that.homeOut('c');
-        });
+        menuItemOne.className += " btn-menu-1";
+        menuItemOne.id = "menuOutA";
+        menuItemOne.innerHTML = '<span>Od podstaw</span><div class="percent">' + this.state.pct[0] + '%</div>';
+
+        menuItemTwo.className += " btn-menu-2";
+        menuItemTwo.id = "menuOutB";
+        menuItemTwo.innerHTML = '<span>Średnio-zaawansowane</span><div class="percent">' + this.state.pct[1] + '%</div>';
+
+        menuItemThree.className += " btn-menu-3";
+        menuItemThree.id = "menuOutC";
+        menuItemThree.innerHTML = '<span>Zaawansowane</span><div class="percent">' + this.state.pct[2] + '%</div>';
+
+        this.store.menuItems = [menuItemOne, menuItemTwo, menuItemThree];       // store menu items
 
         menu.appendChild(menuItemOne);
         menu.appendChild(menuItemTwo);
         menu.appendChild(menuItemThree);
 
-        content.appendChild(menu);
+        content.appendChild(menu);                  // append menu
+    },
 
-        var menuItems = [menuItemOne, menuItemTwo, menuItemThree]
+    _createItemsOnBoard: function() {
+        var content = this.store.content,
+            itemsOnBoard = document.createElement('div');
 
-        var i, len, menuItem;
-        for (i=0, len=menuItems.length; i < len; i++) {
-            menuItem = menuItems[i];
-            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: 400, easing: [0.645,0.045,0.355,1], delay: i*100 } );
+        itemsOnBoard.id = 'items';
+        itemsOnBoard.className = 'items items-on-board';
+
+        this.store.itemsOnBoard = itemsOnBoard;                 // store items-on-board
+        content.insertBefore(itemsOnBoard, content.firstChild); // append items-on-board
+    },
+
+    _createSentence: function() {
+        var sentence = this.store.sentence, // sentence object
+            s = sentence.s,                 // array of good answers
+            b = sentence.b;                 // string - word you can't touch
+
+        if (b === undefined) {              // if there are no restricted word
+            b = false;
+        }
+
+        var content = this.store.content,
+            itemsOnBoard = this.store.itemsOnBoard,
+            // New nodes
+            wrapper = document.createElement('div'),
+            word = document.createElement('div'),
+            wordInner = document.createElement('div'),
+            spill, newWord, wordsCount;
+
+        // Prepare nodes
+        wrapper.id = 'wrapper-words';
+        word.className = 'btn-outer';
+        wordInner.className = "btn-word";
+
+        word.appendChild(wordInner);                            // append inside the word
+
+        // copy the first correct answer and sort words randomly
+        spill = s[0].concat();
+        spill = spill.sort(function() { return 0.5 - Math.random(); });
+
+        // sort once again while spill and answer are the same
+        while (this._checkSpill(spill, s)) {
+            spill = spill.sort(function() { return 0.5 - Math.random(); });
+        }
+
+        // Append words into the wrapper
+        for (var i=0, len=spill.length; i < len; i++) {
+            newWord = word.cloneNode(true);
+            newWord.dataset.pos = i + 1;
+            newWord.firstChild.innerHTML = spill[i];
+            wrapper.appendChild(newWord);                         // append words
+            wordsCount = this.store.words.push(newWord);          // store words
+        }
+
+        this.store.wrapper = wrapper;                           // store wrapper
+        itemsOnBoard.appendChild(wrapper);                      // append wrapper
+    },
+
+    _createClones: function() {
+        var _this = this,
+            wrapper = this.store.wrapper,
+            contentPosition = this.store.contentPosition,
+            words = this.store.words,
+            x = this.opts.valueX,
+            wordPositions = [],
+            storedClones = [],
+            countStoredClones, countWordPositions, wordPosition, clone,
+
+            // new node
+            clones = document.createElement('div');
+
+        // prepare new node
+        clones.className = 'clones';
+        clones.id = 'wrapper-clones';
+
+        // for each word, store its position and create a clone
+        (function() {
+            for (var i=0, len=words.length; i < len; i++) {
+                var word = words[i];
+                wordPosition = word.getBoundingClientRect();
+                wordPositions[i] = {
+                    left: Math.round(wordPosition.left - contentPosition.left),
+                    top: Math.round(wordPosition.top - contentPosition.top),
+                    bottom: Math.round(wordPosition.bottom),
+                };
+
+                clone = word.cloneNode(true);
+                clone.className = clone.className + " clone";
+
+                Velocity.hook(clone, "translateX", wordPositions[i].left + x + "px");
+                Velocity.hook(clone, "translateY", wordPositions[i].top + "px");
+
+                clones.appendChild(clone);                          // append clone
+                countStoredClones = storedClones.push(clone);       // pre-store clones
+            }
+        })();
+
+        this.store.clones = storedClones;               // store clones
+        this.store.wordPositions = wordPositions;       // store positions
+
+        wrapper.parentNode.appendChild(clones);         // append clones
+    },
+
+    _createWrapperBack: function() {
+        this._checkBackSize();
+        var _this = this,
+            wrapper = this.store.wrapper,
+            wrapperBackHeight = this.store.wrapperBackHeight,
+            wrapperBackTop = this.store.wrapperBackTop,
+
+            // new node
+            wrapperBack = document.createElement('div');
+
+        // prepare new node
+        wrapperBack.className = 'wrapper-back';
+
+        wrapperBack.style.height = wrapperBackHeight + "px";
+        wrapperBack.style.top = wrapperBackTop + "px";
+        Velocity.hook(wrapperBack, 'scaleY', 0);
+
+        this.store.wrapperBack = wrapperBack;           // store background
+        wrapper.parentNode.appendChild(wrapperBack);    // append background
+
+        Velocity(wrapperBack, { scaleY: [1, 0] }, {duration: _this.opts.easing * 1.5, easing: _this.opts.easing, queue: false});
+    },
+
+    _createTranslation: function() {
+        var wrapperBack = this.store.wrapperBack,
+            sentence = this.store.sentence,
+            t = sentence.t,                                 // string - translation
+            translation = document.createElement('p'),
+            tSplited = t.split(" "),
+            translationSpans = [],
+            span, count;
+
+        // prepare new node
+        translation.id = 'translation';
+        translation.className = 'translation';
+
+        for (var i=0, len=tSplited.length; i < len; i++) {
+            span = document.createElement("span");
+            span.appendChild( document.createTextNode(tSplited[i]) );
+            count = translationSpans.push(span);
+            translation.appendChild( span );
+            if (i < len - 1) {
+                translation.appendChild( document.createTextNode(" ") );
+            }
+        }
+
+        this.store.translationSpans = translationSpans;     // store translation spans
+
+
+        wrapperBack.appendChild(translation);
+    },
+
+    _createNextArr: function() {
+        if (this.state.level === 'home') { return; }
+
+        var _this = this,
+            itemsOnBoard = this.store.itemsOnBoard,
+            nextArrWrap = document.createElement('div'),
+            nextArr = document.createElement('button');
+
+        // prepare new nodes
+        nextArrWrap.className = 'wrapper-next-arr';
+        nextArrWrap.id = 'wrapper-next-arr';
+        nextArr.className = 'next-arr';
+        nextArr.id = 'next-arr';
+        nextArr.type = 'button';
+        nextArr.innerHTML = '&raquo';
+
+        this.store.nextArr = nextArr;       // store nextArr for referance
+
+        nextArr.addEventListener('click', function _fu() {
+            _this.nextSentence();
+            nextArr.removeEventListener('click', _fu, false);
+        }, false);
+
+        nextArrWrap.appendChild(nextArr);               // append into arrow wrapper
+        itemsOnBoard.appendChild(nextArrWrap);          // append into items-on-board
+    },
+
+    _newSortable: function() {
+        var _this = this,
+            wrapper = this.store.wrapper,
+            sortable;
+
+        if (wrapper) {
+            sortable = new Sortable(wrapper, {
+                animation: 0,
+                onStart: function (evt) {                   // dragging started
+                    _this._toggleOpacity(evt.item, "0.5");
+                },
+                onEnd: function (evt) {                     // dragging ended
+                    _this._toggleOpacity(evt.item, "1");
+                    _this._checkSentence();
+                },
+            });
+            this.store.sortable = sortable;
         }
     },
 
-    homeOut: function(level) {
-        var that = this,
-            menuItems = document.querySelectorAll('.btn-menu'),
-            i,
-            len,
+
+    /**
+     *  REMOVAL
+     */
+
+    _removeHome: function() {
+        try {
+            var content = this.store.content,
+                menu = document.getElementById('menu-home'),
+                menuCopy = menu.cloneNode(true),
+                replacedMenu = content.replaceChild(menuCopy, menu),
+                removedMenu = content.removeChild(menuCopy);
+                replacedMenu =
+                removedMenu = null;
+        } catch (ex) {}
+    },
+
+    _removeFooter: function() {     // this whole thing is in flux
+        //var _this = this,
+        //    content = this.store.content,
+        //    footer = document.querySelector('.app-footer'),
+        //    translate = document.getElementById('translate');
+
+        //Velocity( translate, {opacity: 0, translateY: '1rem'}, {duration: _this.opts.duration, easing: _this.opts.easing, visibility: 'hidden',
+        //    complete: function() {
+        //        _this._destroy(footer);
+        //    }
+        //} );
+    },
+
+    _removeWrapperBack: function(onCompleteBack) {
+        var _this = this,
+            multiplier = this.store.sentence.s[0].length,
+            wrapperBack = this.store.wrapperBack,
+            _onCompleteBack = this._debounce(function() {
+                onCompleteBack()
+            }, 50);
+
+        Velocity(wrapperBack, { scaleY: [0, 1], opacity: [0, 1] }, {duration: _this.opts.duration * 1.5, easing: _this.opts.easing,
+            complete: function(elements) {
+                elements.forEach(function(item, index, array) {
+                    _onCompleteBack();
+                });
+            }
+        });
+    },
+
+    _removeSentence: function() {
+        var translation = document.getElementById('translation'),
+            words = document.getElementById('wrapper-words'),
+            clones = document.getElementById('wrapper-clones'),
+            nextArr = document.getElementById('wrapper-next-arr');
+
+        this._destroy(words);           // destroy words
+        this._destroy(clones);          // destroy clones
+        this._destroy(translation);     // destroy translation
+        this._destroy(nextArr);         // destroy next-arrow
+    },
+
+    _destroySortable: function() {
+        var sortable = this.store.sortable;
+        sortable.destroy();
+        this.store.sortable = null;
+    },
+
+
+    /**
+     *  ANIMATION
+     */
+
+    menuIn: function() {
+        var _this = this,
+            menuItems = this.store.menuItems,
             menuItem;
 
-        for (i=0, len=menuItems.length; i < len; i++) {
+        for (var i=0, len=menuItems.length; i < len; i++) {
             menuItem = menuItems[i];
-            Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: 400, easing: [0.645,0.045,0.355,1], delay: i*100,
+            Velocity( menuItem, { opacity: [1, 0], translateX: [0, '200px'] }, { duration: _this.opts.duration * 2, easing: _this.opts.easing, delay: i*100 } );
+        }
+    },
+
+    menuOut: function(level) {
+        if (this.state.level !== 'home') { return; }
+
+        var _this = this,
+            menuItems = document.querySelectorAll('.btn-menu'),
+            menuItem;
+
+        this.state.level = level;       // store level state
+
+        for (var i=0, len=menuItems.length; i < len; i++) {
+            menuItem = menuItems[i];
+            Velocity( menuItem, { opacity: [0, 1], translateX: ['-200px', 0] }, { duration: _this.opts.duration * 2, easing: _this.opts.easing, delay: i*100,
                 complete: function(elements) {
                     elements.forEach( function(item, index, array) {
                         if ( item === menuItems[len - 1] ) {
-                            that._createSentence(level);
+                            _this._newSentence();
                         }
                     } );
                 }
@@ -881,246 +559,505 @@ Sentence.prototype = {
         }
     },
 
-    // we need a way to determine sentence number
+    animate: function() {
+        var _this = this,
+            words = this.store.words,
+            clones = this.store.clones,
+            contentPosition = this.store.contentPosition,
+            wordPositionsOld = this.store.wordPositions,
+            //wrapper = this.store.wrapper,
+            wordPositionsNew = [],
+            len = words.length,
+            wordPosition, lastChild, lastChildPosition, newPadding, animateClones, animateWrapperBack;
 
-    comeIn: function() {
-        var wrapper = document.getElementById('wrapper-items'),
-            words = wrapper.querySelectorAll('.btn-word'),
-            wrapper_position = wrapper.getBoundingClientRect(),
-            parent = wrapper.parentNode,
-            clones = document.createElement('div'),
-            x = 400,
-            word,
-            word_position,
-            clone,
-            cloned_node,
-            i,
-            len;
+        (function() {
+            for (var i=0; i < len; i++) {
+                //words[i].style.paddingRight = '';   // reset padding;
+            }
+        })();
 
-        for (i=0, len=words.length; i < len; i++) {
-            word = words[i];
-            word_position = word.getBoundingClientRect();
+        (function() {
+            for (var i=0; i < len; i++) {
+                wordPosition = words[i].getBoundingClientRect();
 
-            clone = word.cloneNode(true);
-            clone.className = clone.className + " clone";
+                wordPositionsNew[i] = {
+                    left: Math.round(wordPosition.left - contentPosition.left),
+                    top: Math.round(wordPosition.top - contentPosition.top),
+                    bottom: Math.round(wordPosition.bottom - contentPosition.top),
+                };
+            }
+        })();
+        this.store.wordPositions = wordPositionsNew;    // store each word's position
 
-            word.setAttribute('data-pos', i + 1);
+        animateClones = this._debounce(function() {
+            for (var i=0; i < len; i++) {
+                Velocity( clones[i], {
+                    translateX: [wordPositionsNew[i].left, wordPositionsOld[i].left],
+                    translateY: [wordPositionsNew[i].top, wordPositionsOld[i].top],
+                }, { duration: _this.opts.duration, easing: _this.opts.easing, queue: false,
+                });
+            }
+        }, 10);
+        animateClones();
 
-            Velocity.hook(clone, "translateX", word_position.left - wrapper_position.left - 10 + x + "px");
-            Velocity.hook(clone, "translateY", word_position.top - wrapper_position.top - 10 + "px");
+        animateWrapperBack = this._debounce(function() {
+            _this._animateWrapperBack();
+        }, 200);
+        animateWrapperBack();
 
-            clones.appendChild(clone);
+        // add padding to the last element
+        //lastChild = wrapper.lastChild;
+        //lastChildPosition = lastChild.getBoundingClientRect();
+        //newPadding = Math.floor( wrapperPosition.right - lastChildPosition.right );
+        //Velocity.hook(lastChild, 'paddingRight', newPadding + "px" );
+
+    },
+
+    _animateWrapperBack: function() {
+        var _this = this;
+            wrapperBack = this.store.wrapperBack,
+            changedWrapperBack = this._checkBackSize();
+
+        if (changedWrapperBack) {
+            var wrapperBackHeight = this.store.wrapperBackHeight;
+            var wrapperBackTop = this.store.wrapperBackTop;
+
+            Velocity(wrapperBack, { height: wrapperBackHeight, top: wrapperBackTop }, {duration: _this.opts.duration * 1.5, easing: _this.opts.easing, queue: false});
         }
-
-        clones.className = 'clones';
-        parent.appendChild(clones);
-
-        cloned_node = clones.firstChild;
-
-        function hook(i) {
-            setTimeout(function(){
-                word = words[i];
-                word_position = word.getBoundingClientRect();
-
-                pos = word.getAttribute('data-pos') - 1;
-                clone = clones.querySelectorAll('.clone')[pos];
-                Velocity.hook(clone, "translateX", word_position.left - wrapper_position.left - 10 + "px");
-                Velocity.hook(clone, "opacity", 1);
-            }, 100*i);
-         }
-
-        for (i=0, len=words.length; i < len; i++) {
-            hook(i);
-        }
-
-        this._newSortable();
     },
 
     showTrans: function() {
-        var translation = document.querySelector(".translation"),
-            spans = translation.querySelectorAll("span"),
-            i,
-            len,
+        if (this.state.transIn) { return; }
+        if (this.state.level === 'home') { return; }
+
+        var _this = this,
+            spans = this.store.translationSpans,
             span;
 
-        for (i=0, len=spans.length; i < len; i++) {
+        for (var i=0, len=spans.length; i < len; i++) {
             span = spans[i];
-            Velocity( span, { opacity: [1, 0],  translateX: [0, '400px'] }, { duration: 200, easing: [0.645,0.045,0.355,1], delay: i*100 } );
+            Velocity( span, { opacity: [1, 0],  translateX: [0, '200px'] }, { duration: _this.opts.duration, easing: _this.opts.easing, delay: i*100 } );
         }
 
-        var button = document.querySelector('.btn-translate');
+        this._toggleBtn('showTrans', false);
 
-        Velocity( button, {opacity: 0, translateY: '1rem'}, {duration: 200, easing: [0.645,0.045,0.355,1], visibility: 'hidden'} );
+        this.state.transIn = true;
     },
 
-    _createSentence: function(level, no) {
-        var that = this,
-            no = 0, // for now, before we determine sentence no
+    _toggleFooter: function() {
+        var level = this.state.level,
+            footer = this.store.footer;
 
-            // Get the sentence
-            sentences = this._getSentences(level),
-            sentence = sentences[no],
-            s = sentence['s'], // array of good answers
-            b = sentence['b'], // string - word you can't touch
-
-            // New nodes
-            wrapper = document.createElement('div'),
-            word = document.createElement('div'),
-            spill,
-            clone,
-            items,
-            i,
-            len;
-
-        // Prepare nodes
-        wrapper.className = 'space-x4';
-        wrapper.id = 'wrapper-items';
-        word.className = 'btn btn-word btn-s-2';
-
-        spill = s[0].sort(function() { return 0.5 - Math.random() });
-
-        /*
-         OBS!
-         trzeba jeszcze sprawdzić, czy spill nie rozwiązał zadania samemu
-        */
-
-        // Append words into the wrapper
-        for (i=0, len=spill.length; i < len; i++) {
-            clone = word.cloneNode(true);
-            clone.innerHTML = spill[i];
-            wrapper.appendChild(clone);
+        if (this.state.footerIn) {
+            footer.parentNode.className = 'app-footer';
+            this.state.footerIn = false;
+        } else {
+            footer.parentNode.className += ' app-footer-sentence';
+            this.state.footerIn = true;
         }
 
-        // remove the menu
-        this._removeHome();
-
-        // create and return items wrapper
-        items = this._createItemsWrapper();
-
-        // append the wrapper
-        items.insertBefore(wrapper, items.firstChild);
-
-        // create footer
-        this._createFooter();
-
-        // create translation
-        this._createTranslation(level, no);
-
-        // let the sentence in
-        this.comeIn();
+        this._toggleBtn('showTrans', this.state.footerIn);
+        this._toggleBtn('backHome', this.state.footerIn);
     },
 
-    _createTranslation: function(level, no) {
-        var that = this,
-            items = document.getElementById('items'),
-            no = 0, // for now, before we determine sentnce no
-            sentences = this._getSentences(level),
-            sentence = sentences[no],
-            t = sentence['t'], // string - translation
-            translation = document.createElement('p'),
-            span,
-            len,
-            i;
+    _toggleBtn: function(btn, on) {
+        if (on !== this.state.btns[btn]) {
+            var clicked = document.getElementById(btn),
+                className = 'btn-footer-hidden';
 
-        // Append spans in translation
-        t = t.split(" ");
-        for (i=0, len=t.length; i < len; i++) {
-            span = document.createElement("span");
-            span.appendChild( document.createTextNode(t[i]) );
-            translation.appendChild( span );
-            if (i < len - 1) {
-                translation.appendChild( document.createTextNode(" ") );
+            this.state.btns[btn] = on;
+            this._toggleClass(clicked, className);
+        }
+    },
+
+    _toggleNextArr: function() {
+        if (this.state.level === 'home') { return; }
+
+        var _this = this,
+            nextArr = this.store.nextArr;
+
+        if (this.state.btns.nextArr) {
+            this.state.btns.nextArr = false;
+
+            Velocity(nextArr, {scale: [0, 1]}, { duration: _this.opts.duration*2, easing: _this.opts.easing, delay: _this.opts.duration, display: 'none'});
+
+        } else {
+            this.state.btns.nextArr = true;
+
+            Velocity(nextArr, {scale: [1, 0]}, { duration: _this.opts.duration*2, easing: _this.opts.easing, delay: _this.opts.duration, display: 'block'});
+        }
+    },
+
+    _comeIn: function() {
+        var _this = this,
+            wordPositions = this.store.wordPositions,
+            clones = this.store.clones,
+            x = this.opts.valueX,
+            left;
+
+        (function() {
+            for (var i=0, len=clones.length; i < len; i++) {
+                left = wordPositions[i].left;
+                Velocity(
+                    clones[i],
+                    { opacity: 1, translateX: [left, left + x]},
+                    { duration: _this.opts.duration, easing: _this.opts.easing, delay: i*100 + _this.opts.duration, queue: false }
+                );
             }
-        }
-        translation.id = 'translation';
-        translation.className = 'translation';
-
-        items.appendChild(translation);
+        })();
     },
 
-    _createFooter: function() {
-        var that = this,
-            content = this.content,
-            footer = document.createElement('footer'),
-            footerWrapper = document.createElement('div'),
-            footerTips = document.createElement('button');
+    _comeOut: function(onComplete) {
+        if (this.state.level === 'home') { return; }
 
-        footer.className = 'app-footer';
-        footerWrapper.className = 'section-content section-1-1 group centered';
-        footerWrapper.id = 'wrapper-buttons';
-        footerTips.className = 'btn btn-translate';
-        footerTips.appendChild( document.createTextNode('Tips') );
-        footerTips.id = 'translate';
-        footerTips.type = 'button';
-        footerTips.addEventListener('click', function() {
-            that.showTrans();
+        var _this = this,
+            wordPositions = this.store.wordPositions,
+            clones = this.store.clones,
+            nextArr = this.store.nextArr,
+            transIn = this.state.transIn,
+            x = this.opts.valueX,
+            actualWords = this.store.wrapper.childNodes,
+            span, left, position,
+            _onComplete = this._debounce(function() {
+                onComplete()
+            }, 50);
+
+        if (transIn) {
+            var translationSpans = this.store.translationSpans;
+
+            (function() {
+                for (var i=0, len=translationSpans.length; i < len; i++) {
+                    span = translationSpans[i];
+                    Velocity( span, { opacity: [0, 1],  translateX: ['-200px', 0] }, { duration: _this.opts.duration, easing: _this.opts.easing, delay: i*100 } );
+                }
+            })();
+        }
+
+        if (this.state.btns.nextArr) {
+            this._toggleNextArr();
+        }
+
+        (function() {
+            for (var i=0, len=actualWords.length; i < len; i++) {
+                position = actualWords[i].dataset.pos - 1;
+                left = wordPositions[position].left;
+                Velocity(
+                    clones[position],
+                    { opacity: [0, 1], translateX: [left - x, left]},
+                    { duration: _this.opts.duration, easing: _this.opts.easing, delay: i*100 + _this.opts.duration, queue: false,
+                        complete: function(elements) {
+                            elements.forEach( function(item, index, array) {
+                                if ( item === clones[len - 1] ) {
+                                    _onComplete();
+                                }
+                            } );
+                        }
+                    }
+                );
+            }
+        })();
+    },
+
+    _changeColor: function() {
+        var section = this.store.section,
+            sectionClass = ' section-100',
+            level = this.state.level;
+
+        switch (level) {
+            case 'a':    section.className = 'section-green' + sectionClass; break;
+            case 'b':    section.className = 'section-orange' + sectionClass; break;
+            case 'c':    section.className = 'section-red' + sectionClass; break;
+            case 'home': section.className = 'section-dark' + sectionClass; break;
+        }
+    },
+
+    _toggleOpacity: function(el, op) {
+        try {
+            var pos = el.dataset.pos - 1,
+                clone = this.store.clones[pos];
+            Velocity.hook(clone, "opacity", op);
+        } catch (ex) {}
+    },
+
+    _toggleItems: function() {
+        var itemsOnBoard = this.store.itemsOnBoard;
+
+        if (itemsOnBoard.className === 'items items-on-board') {
+            itemsOnBoard.className += " items-off";
+        } else {
+            itemsOnBoard.className = 'items items-on-board';
+        }
+    },
+
+
+    /**
+     *  HELPERS
+     */
+
+    _getSentence: function() {
+        try {
+            var level = this.state.level,
+                no = this.state[level],
+                sentence;
+
+            switch (level) {
+                case 'a': sentence = arrayA(no, false); break;
+                case 'b': sentence = arrayB(no, false); break;
+                case 'c': sentence = arrayC(no, false); break;
+            }
+            return this.store.sentence = sentence;  // store sentence
+        } catch (ex) { console.log(ex); }
+    },
+
+    _getLevelsPct: function() {
+        try {
+            var state = this.state,
+                a = arrayA(false, true),
+                b = arrayB(false, true),
+                c = arrayC(false, true),
+                pctA = Math.round( state.a * 100 / a ),
+                pctB = Math.round( state.b * 100 / b ),
+                pctC = Math.round( state.c * 100 / c );
+
+            state.pct = [pctA, pctB, pctC];                     // store percentage
+
+        } catch (ex) {}
+    },
+
+    _checkSentence: function() {        // check if sentence is correct
+        var _this = this,
+            sentence = this.store.sentence,
+            s = sentence.s,
+            wrapper = this.store.wrapper,
+            wordsOrder = [],
+            checkSentence, words, count;
+
+        checkSentence = this._debounce(function(){
+            words = wrapper.querySelectorAll('.btn-word');
+
+            (function() {
+                for (var i=0, len=words.length; i < len; i++) {
+                    count = wordsOrder.push(words[i].innerHTML);
+                }
+            })();
+
+            if ( _this._checkSpill(wordsOrder, s) ) {
+                _this._finishedSentence();                              // if the sentence is correct call the end
+            }
+
+            console.log('check sentence');
+
+        }, 200);
+
+        checkSentence();
+    },
+
+    _checkBackSize: function() {
+        try {
+            var wordPositions = this.store.wordPositions,
+                wrapperBackHeight = this.store.wrapperBackHeight,
+                wordTops = [],
+                wordBottoms = [],
+                top, bottom, newHeight, newTop;
+
+            for (var i=0, len=wordPositions.length; i < len; i++) {
+                top = wordPositions[i].top;
+                bottom = wordPositions[i].bottom;
+                wordTops.push(top);
+                wordBottoms.push(bottom);
+            }
+
+            console.log('check back size');
+
+            wordTops.sort();
+            wordBottoms.sort();
+
+            newHeight = Math.floor( wordBottoms[wordBottoms.length -1] - wordTops[0] ) + 6;
+            newTop = Math.floor( wordTops[0] - 3 );
+
+            if (wrapperBackHeight !== newHeight) {
+                this.store.wrapperBackHeight = newHeight;
+                this.store.wrapperBackTop = newTop;
+                return true;        // if the size changed, return true
+            }
+
+        } catch(ex) {}
+    },
+
+    _watchResize: function(state) {
+        var _this = this,
+            resize;
+
+        if (state) {
+            resize = _this._debounce(function() {
+                _this.animate();
+            }, 250);
+
+            window.addEventListener('resize', resize, false);
+            _this.store.resize = resize;
+
+            console.log('watch resize on');
+        } else {
+            resize = _this.store.resize;
+            window.removeEventListener('resize', resize, false);
+
+            _this.store.resize = null;
+
+            console.log('watch resize off');
+        }
+    },
+
+    _attachListeners: function() {
+        var _this = this;
+
+        document.addEventListener('click', function listener(event) {
+            var target = event.target;
+
+            switch (target.id) {
+                case "showTrans":  _this.showTrans(); break;
+                case "backHome":   _this.backHome(); break;
+                case "resetState": _this.resetState(); break;
+                case "menuOutA" : _this.menuOut('a'); break;
+                case "menuOutB":  _this.menuOut('b'); break;
+                case "menuOutC":  _this.menuOut('c'); break;
+            }
+
+        });
+    },
+
+    _cleanStore: function() {
+        this.store.sentence =
+        this.store.wrapper =
+        this.store.nextArr =
+        this.store.translationSpans = null;
+
+        this.store.wrapperBackHeight =
+        this.store.wrapperBackTop = 0;
+
+        this.store.words =
+        this.store.clones =
+        this.store.wordPositions =
+        this.store.translationSpans = [];
+
+        this.state.transIn =
+        this.state.btns.nextArr = false;
+
+        console.log('cleaned store');
+    },
+
+    _saveState: function() {
+        var state = this.state,
+            level = state.level,
+            storage = localStorage;
+
+        storage.setItem('level', level);
+        console.log('saved level');
+
+        if (level !== 'home') {
+            storage.setItem(level, state[level]);
+            console.log('saved number');
+        }
+    },
+
+    _loadState: function() {
+        if (localStorage.length > 0) {
+            var a = parseInt( localStorage.getItem('a') ),
+                b = parseInt( localStorage.getItem('b') ),
+                c = parseInt( localStorage.getItem('c') );
+
+            this.state.level = localStorage.getItem('level');
+
+            if (a >= 0) { this.state.a = a; }
+            if (b >= 0) { this.state.b = b; }
+            if (c >= 0) { this.state.c = c; }
+
+            console.log('state loaded');
+        }
+    },
+
+    resetState: function() {
+        var storage = localStorage;
+
+        if (storage.length > 0) {
+            storage.clear();
+            document.location.reload();
+        }
+    },
+
+
+    // Returns a function, _this, as long as it continues to be invoked, will not
+    // be triggered. The function will be called after it stops being called for
+    // N milliseconds. If `immediate` is passed, trigger the function on the
+    // leading edge, instead of the trailing.
+    _debounce: function(func, wait, immediate) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    },
+
+    _toggleClass: function(el, className) {
+        if (el.classList) {
+            el.classList.toggle(className);
+        } else {
+            var classes = el.className.split(' ');
+            var existingIndex = classes.indexOf(className);
+
+            if (existingIndex >= 0) {
+                classes.splice(existingIndex, 1);
+            } else {
+                classes.push(className);
+            }
+
+            el.className = classes.join(' ');
+        }
+    },
+
+    _destroy: function(el) {
+        try {
+            var parent = el.parentNode,
+                copy = el.cloneNode(true),
+                replaceEl = parent.replaceChild(copy, el),
+                removeEl = parent.removeChild(copy);
+
+            el =
+            copy =
+            replaceEl =
+            removeEl = null;
+        } catch (ex) {console.log(ex);}
+    },
+
+    _compareArrays: function(array1, array2) {
+        if (!array1 || !array2) { return; }
+
+        if (array1.length !== array2.length) { return false; }
+
+        for (var i=0, len=array1.length; i < len; i++) {
+            if (array1[i] !== array2[i]) { return false; }
+        }
+        return true;
+    },
+
+    _checkSpill: function(spill, s) {
+        var _this = this;
+
+        var result = s.every(function(item, index, array){
+            return _this._compareArrays(spill, item);
         });
 
-        footerWrapper.appendChild(footerTips);
-        footer.appendChild(footerWrapper);
-
-        content.appendChild(footer);
+        return result;
     },
 
-    _removeHome: function() {
-        var content = this.content;
-            menu = document.getElementById('menu-home');
-
-        content.removeChild(menu);
-    },
-
-    _getSentences: function(level) {
-        var sentences;
-
-        if (level === 'a') {
-            sentences = arrayA;
-        } else if (level === 'b') {
-            sentences = arrayB;
-        } else if (level === 'c') {
-            sentences = arrayC;
-        } else {
-            console.log('level not provided');
-        }
-        return sentences;
-    },
-
-    _getLevels: function() {
-        // some way of geting percent of levels done to show on home
-    },
-
-    _createItemsWrapper: function() {
-        var content = this.content,
-            items = document.createElement('div');
-
-        items.className = 'items items-on-board';
-        items.id = 'items';
-        content.appendChild(items);
-
-        return items;
-
-    },
-
-    _getWrapper: function() {
-        var wrapper = document.getElementById('wrapper-items');
-        return wrapper
-    },
-
-    _newSortable: function() {
-        var wrapperItems = document.getElementById('wrapper-items'),
-            sortable = new Sortable(wrapperItems);
-    },
-
-    _destroySortable: function() {
-
-    }
 
 };
 
+
 var sentence = new Sentence();
-
-
-window.addEventListener('load', function() {
-
-    sentence.homeIn(); // load the menu
-
-}, false );

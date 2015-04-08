@@ -68,6 +68,7 @@ function Sentence() {
 
     this.state = {
         transIn:    false,
+        footerIn:   false,
         btns:       {
                         showTrans:  false,
                         backHome:   false,
@@ -160,20 +161,21 @@ Sentence.prototype = {
         if (level !== 'home') {
             var _this = this,
                 onComplete = this._debounce(function() {
-                                _this._toggleItems();           // back to normal color of words
-                                _this._removeSentence();        // remove sentence and translate
-                                _this._cleanStore();            // clean store
+                                _this._toggleItems();               // back to normal color of words
+                                _this._removeSentence();            // remove sentence and translate
+                                _this._cleanStore();                // clean store
 
-                                _this._getSentence();           // get the words
-                                _this._createSentence();        // create the words
-                                _this._createClones();          // clone the words
-                                _this._animateWrapperBack();    // animate back
-                                _this._createTranslation();     // create translation
-                                _this._createNextArr();         // create next arr
-                                _this._newSortable();           // init. Sortable
-                                _this._watchResize(true);       // watch browser changes
+                                _this._getSentence();               // get the words
+                                _this._createSentence();            // create the words
+                                _this._createClones();              // clone the words
+                                _this._animateWrapperBack();        // animate back
+                                _this._createTranslation();         // create translation
+                                _this._createNextArr();             // create next arr
+                                _this._newSortable();               // init. Sortable
+                                _this._watchResize(true);           // watch browser changes
+                                _this._toggleBtn('showTrans',true); // reset showTrans
 
-                                _this._comeIn();                // let the sentence in
+                                _this._comeIn();                    // let the sentence in
                             }, 300);
 
             this._comeOut(onComplete);           // animate everything out
@@ -186,28 +188,26 @@ Sentence.prototype = {
         var _this = this,
             itemsOnBoard = this.store.content.firstChild;
 
-        this._watchResize(false);                           // stop watching browser changes
+        this._watchResize(false);                       // stop watching browser changes
+        this._toggleFooter();                           // hide footer
 
         function onComplete() {
             _this.state.level = 'home';                 // save state
             _this._saveState();
+            _this._removeSentence();                    // remove sentence and translation
 
             function onCompleteBack() {
                 _this._destroy(itemsOnBoard);
                 _this._changeColor();                   // change color
-                _this._toggleFooter();                  // hide footer
                 _this._cleanStore();                    // clean store
 
                 _this._createMenu();
                 _this.menuIn();
             };
-
-            _this._removeSentence();                    // remove sentence and translation
             _this._removeWrapperBack(onCompleteBack);   // remove wrapper back
-
         };
-
         this._comeOut(onComplete);            // animate sentence, destroy it, animate back, destroy it
+
     },
 
 
@@ -282,7 +282,7 @@ Sentence.prototype = {
             spill, newWord, wordsCount;
 
         // Prepare nodes
-        wrapper.id = 'wrapper-items';
+        wrapper.id = 'wrapper-words';
         word.className = 'btn-outer';
         wordInner.className = "btn-word";
 
@@ -325,6 +325,7 @@ Sentence.prototype = {
 
         // prepare new node
         clones.className = 'clones';
+        clones.id = 'wrapper-clones';
 
         // for each word, store its position and create a clone
         (function() {
@@ -416,6 +417,7 @@ Sentence.prototype = {
 
         // prepare new nodes
         nextArrWrap.className = 'wrapper-next-arr';
+        nextArrWrap.id = 'wrapper-next-arr';
         nextArr.className = 'next-arr';
         nextArr.id = 'next-arr';
         nextArr.type = 'button';
@@ -500,13 +502,15 @@ Sentence.prototype = {
     },
 
     _removeSentence: function() {
-        var itemsOnBoard = this.store.itemsOnBoard,
-            wrapperBack = this.store.wrapperBack;
+        var translation = document.getElementById('translation'),
+            words = document.getElementById('wrapper-words'),
+            clones = document.getElementById('wrapper-clones'),
+            nextArr = document.getElementById('wrapper-next-arr');
 
-        this._destroy(itemsOnBoard.firstChild);         // destroy words
-        this._destroy(itemsOnBoard.firstChild);         // destroy clones
-        this._destroy(wrapperBack.firstChild);          // destroy translation
-        this._destroy(itemsOnBoard.lastChild);          // destroy next-arrow
+        this._destroy(words);           // destroy words
+        this._destroy(clones);          // destroy clones
+        this._destroy(translation);     // destroy translation
+        this._destroy(nextArr);         // destroy next-arrow
     },
 
     _destroySortable: function() {
@@ -635,43 +639,33 @@ Sentence.prototype = {
             Velocity( span, { opacity: [1, 0],  translateX: [0, '200px'] }, { duration: _this.opts.duration, easing: _this.opts.easing, delay: i*100 } );
         }
 
-        this._toggleBtn('showTrans');
+        this._toggleBtn('showTrans', false);
 
         this.state.transIn = true;
     },
 
     _toggleFooter: function() {
         var level = this.state.level,
-            transIn = this.state.transIn,
             footer = this.store.footer;
 
-        if (level === 'home') {
+        if (this.state.footerIn) {
             footer.parentNode.className = 'app-footer';
+            this.state.footerIn = false;
         } else {
             footer.parentNode.className += ' app-footer-sentence';
+            this.state.footerIn = true;
         }
 
-        if (!transIn) {
-            this._toggleBtn('showTrans');
-        }
-
-        this._toggleBtn('backHome');
+        this._toggleBtn('showTrans', this.state.footerIn);
+        this._toggleBtn('backHome', this.state.footerIn);
     },
 
-    _toggleBtn: function(btn) {
-        var _this = this
-            state = this.state.btns[btn],
-            clicked = document.getElementById(btn),
-            className = 'btn-footer-hidden';
+    _toggleBtn: function(btn, on) {
+        if (on !== this.state.btns[btn]) {
+            var clicked = document.getElementById(btn),
+                className = 'btn-footer-hidden';
 
-        if (state) {
-            state = false;
-
-            this._toggleClass(clicked, className);
-
-        } else {
-            state = true;
-
+            this.state.btns[btn] = on;
             this._toggleClass(clicked, className);
         }
     },
@@ -786,13 +780,12 @@ Sentence.prototype = {
     },
 
     _toggleItems: function() {
-        var itemsOnBoard = this.store.itemsOnBoard
-            className = itemsOnBoard.className;
+        var itemsOnBoard = this.store.itemsOnBoard;
 
-        if (className === 'items items-on-board')
-            className += " items-off";
-        else {
-            className = 'items items-on-board' ;
+        if (itemsOnBoard.className === 'items items-on-board') {
+            itemsOnBoard.className += " items-off";
+        } else {
+            itemsOnBoard.className = 'items items-on-board';
         }
     },
 
@@ -900,13 +893,16 @@ Sentence.prototype = {
                 _this.animate();
             }, 250);
 
-            _this.store.resize = resize;
             window.addEventListener('resize', resize, false);
+            _this.store.resize = resize;
+
             console.log('watch resize on');
         } else {
             resize = _this.store.resize;
-
             window.removeEventListener('resize', resize, false);
+
+            _this.store.resize = null;
+
             console.log('watch resize off');
         }
     },
@@ -961,17 +957,19 @@ Sentence.prototype = {
             storage.setItem(level, state[level]);
             console.log('saved number');
         }
-
-
     },
 
     _loadState: function() {
         if (localStorage.length > 0) {
-            var level = localStorage.getItem('level');
-            this.state.level = level;
-            this.state.a = parseInt( localStorage.getItem('a') );
-            this.state.b = parseInt( localStorage.getItem('b') );
-            this.state.c = parseInt( localStorage.getItem('c') );
+            var a = parseInt( localStorage.getItem('a') ),
+                b = parseInt( localStorage.getItem('b') ),
+                c = parseInt( localStorage.getItem('c') );
+
+            this.state.level = localStorage.getItem('level');
+
+            if (a >= 0) { this.state.a = a; }
+            if (b >= 0) { this.state.b = b; }
+            if (c >= 0) { this.state.c = c; }
 
             console.log('state loaded');
         }

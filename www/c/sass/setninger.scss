@@ -23,7 +23,9 @@ font-style:normal;
 -webkit-appearance: none;
 }
 html{font:200 1em/1.25 "Gill Sans", sans-serif}
-body{-webkit-text-size-adjust:none;}
+body{-webkit-text-size-adjust:none;
+-webkit-font-smoothing:antialiased;
+}
 .header{position:absolute;left:0;right:0;top:0;padding-top:20px;background:$dark-btn;}
 .header-content{width:100%;text-align:center;background:#fff}
 .header-content a{display:inline-block;border:0;color:$font-dark;font-family:Bariol,$bariol}
@@ -73,16 +75,20 @@ color:#fff;text-align:center;text-decoration:none;text-transform:none;text-shado
 overflow:hidden;cursor:move;
 -webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;-o-user-select:none;user-select:none;
 transition:none;
-transform:translate3d(0,0,0);
-
 }
 
 .btn-word{padding:$space-half $space;background-color:$green;border-radius:3px;border:1px solid transparent;border-top-color:rgba(255,255,255,0.2);border-bottom-color:rgba(0,0,0,0.2);
-font:200 22px/1 Gill Sans, sans-serif;}
+font:200 22px/1 Gill Sans, sans-serif;
+-webkit-font-smoothing:antialiased;
+}
 .btn-outer:active,.btn-outer:focus{opacity:1;}
 
 .clones{position:absolute;left:0;top:0;z-index:1}
 .clone{position:absolute;left:0;top:0;z-index:0;opacity:0;}
+.clone .btn-word{
+//transform:translate3d(0, 0, 0);
+//backface-visbility:hidden;
+}
 
 
 .wrapper-back{position:absolute;z-index:0;left:0;top:0;right:0;height:0;background:$green-light;border-width:1px 0;border-style:solid;border-top-color:rgba(0,0,0,0.3);border-bottom-color:rgba(255,255,255,0.15);
@@ -94,8 +100,10 @@ transform:scaleY(0);
 
 
 
-.translation{position:absolute;bottom:(-$space);left:0;right:0;top:100%;padding:$space;margin:0;font-style:italic;transition:none;text-align:center}
-.translation span{display:inline-block;opacity:0;}
+.translation{position:absolute;bottom:(-$space);left:0;right:0;top:100%;padding:$space;margin:0;font-style:italic;transition:none;text-align:center;
+}
+.translation span{display:inline-block;opacity:0;
+}
 
 
 .wrapper-next-arr{position:absolute;bottom:$space-6;left:0;right:0;}
@@ -110,7 +118,8 @@ transition:all 400ms cubic-bezier(0.645, 0.045, 0.355, 1) 0s;}
 
 .section-footer{padding-top:0;padding-bottom:0;}
 
-.btn-footer{padding:$space $space-2;margin:0;border:0;background:transparent;font:200 16px/1 'Gill Sans', sans-serif;color:#fff}
+.btn-footer{padding:$space $space-2;margin:0;border:0;background:transparent;font:200 16px/1 'Gill Sans', sans-serif;color:#fff;
+}
 
 .btn-footer-menu{float:left;}
 .btn-footer-translate{display:inline-block;}
